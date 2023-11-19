@@ -1,13 +1,13 @@
 {
-	"name": "blog-template",
+	"name": "juansetech-blog",
 	"type": "module",
 	"version": "1.1.0",
-	"description": "A template for creating a blog with Astro",
-	"author": "danielcgilibert",
+	"description": "Blog personal de Juanse",
+	"author": "sebasvil20",
 	"license": "GPL-3.0-only",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/danielcgilibert/blog-template"
+		"url": "https://github.com/sebasvil20/juansetech-blog"
 	},
 	"keywords": [
 		"astro",
@@ -17,7 +17,7 @@
 		"astro-b"
 	],
 	"bugs": {
-		"url": "https://github.com/danielcgilibert/blog-template/issues"
+		"url": "https://github.com/sebasvil20/juansetech-blog/issues"
 	},
 	"scripts": {
 		"dev": "tinacms dev -c 'astro dev'",
