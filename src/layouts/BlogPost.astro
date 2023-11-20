@@ -28,6 +28,22 @@ const articleDate = pubDate.toISOString()
 	<article class='min-w-full md:py-4 sm:max-w-none md:max-w-none'>
 		<header class='mb-3 flex flex-col justify-center items-center gap-6'>
 			<div class='flex flex-col gap-2'>
+				<>
+					{
+						heroImage && (
+							<Image
+								src={heroImage}
+								width={150}
+								height={150}
+								quality={100}
+								format='jpg'
+								loading='eager'
+								class='rounded-xl mx-auto my-8 object-cover'
+								alt={`img of ${title}`}
+							/>
+						)
+					}
+				</>
 				<div class='flex items-center justify-center gap-x-1'>
 					<p class='text-center text-sm text-opacity-50'>
 						Publicado el <FormattedDate date={pubDate} />
@@ -45,23 +61,6 @@ const articleDate = pubDate.toISOString()
 				{tags.map((tag) => <Tag tag={tag} />)}
 			</div>
 		</header>
-
-		<>
-			{
-				heroImage && (
-					<Image
-						src={heroImage}
-						width={1000}
-						height={500}
-						quality={100}
-						format='jpg'
-						loading='eager'
-						class='rounded-md w-full max-h-[300px]  md:max-h-[500px] my-8 object-cover'
-						alt={`img of ${title}`}
-					/>
-				)
-			}
-		</>
 
 		<hr />
 
