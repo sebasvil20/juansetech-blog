@@ -2,9 +2,10 @@
 heroImage: /src/assets/images/gopher-gotham.png
 category: Desarrollo de software
 description: >-
-  ¿Quieres saber como manejar la inyección de dependencias en tu app hecha en
-  Go? Si tienes curiosidad en este post te mostraré varias alternativas para que
-  compares y elijas la que más se acomode a tu proyecto.
+  Descubre los secretos de la inyección de dependencias en tu aplicación Go.
+  Este post te guiará a través de diversas alternativas, permitiéndote comparar
+  y elegir la mejor opción para tu proyecto. Optimiza tu código y lleva tu
+  desarrollo en Go al siguiente nivel. ¡No te pierdas esta guía esencial!
 pubDate: 2023-11-23T05:00:00.000Z
 draft: false
 tags:
@@ -14,3 +15,124 @@ tags:
   - '#Go'
 title: Como hacer inyección de dependencias en Go
 ---
+
+¿Cansado de depender de variables globales para arrancar tu logger? ¿Deseas garantizar que todas tus capas se inicialicen en un único lugar y solo una vez? ¿Utilizas interfaces y structs para definir tus módulos, pero te enfrentas al desafío de pasar dependencias inicializadas entre ellos? Prepárate, porque en este artículo exploraremos diversas estrategias para la inyección de dependencias en Go. Desde enfoques sin librerías hasta aquellos que las incorporan, descubrirás los pros y contras de cada uno. ¡Es hora de optimizar tu código y elevar tus habilidades en Go al siguiente nivel!
+
+## Inyección de dependencias sin librerías en Go:
+
+Para lograr hacer inyección de dependencias en Go sin librerías debemos tener en cuenta que para lograr esto es necesario el uso de interfaces y structs para la definición de cada uno de tus módulos, esto va a ser específicamente útil al momento de testear toda tu aplicación. La lógica es simple, una función `New...()` o `Provide...()` que cree una instancia de tu módulo e inicializarlos luego en algún fichero central de tu aplicación.
+
+Veámoslo con un ejemplo, una API de libros básica con una db mockeada. Tenemos un controlador, un servicio y un repositorio, cada uno necesita del otro (dependencias), por ejemplo el controlador necesita un servicio y el servicio necesita un repositorio. Let's dig into code.
+
+_Disclaimer: En estos ejemplos utilizo [Gin Gonic ](https://github.com/gin-gonic/gin 'Gin Gonic')para el servidor web, pero todos son realizables y adaptables para el framework/router que utilices 😄_
+
+`book_repository.go`
+
+```go
+type IBookRepository interface {
+	GetBook(ctx context.Context, id string) (any, error)
+}
+
+type BookRepository struct {
+	DBMock map[string]any
+}
+
+func (repo *BookRepository) GetBook(ctx context.Context, id string) (any, error) {
+	book, ok := repo.DBMock[id]
+	if !ok {
+		return nil, errors.New("no books found")
+	}
+
+	return book, nil
+}
+
+```
+
+`book_service.go`
+
+```go
+type IBookService interface {
+  GetBook(ctx context.Context, id string)(any, error)
+}
+
+type BookService struct {
+	BookRepository repository.IBookRepository
+}
+
+func(srv * BookService) GetBook(ctx context.Context, id string)(any, error) {
+  return srv.BookRepository.GetBook(ctx, id)
+}
+```
+
+`book_controller.go`
+
+```go
+type IBooksController interface {
+	GetBook(c *gin.Context)
+}
+
+type BooksController struct {
+	BooksService service.IBookService
+}
+
+func (ctrl *BooksController) GetBook(c *gin.Context) {
+	book, err := ctrl.BooksService.GetBook(c, c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, book)
+}
+```
+
+Una forma fácil para inicializar y pasar todas las dependencias necesarias puede ser en el `main.go`, de la siguiente forma:
+
+```go
+func main() {
+	bookRepo := repository.BookRepository{DBMock: map[string]any{}}
+	bookSrv := service.BookService{BookRepository: &bookRepo}
+	bookCtrl := controller.BooksController{BooksService: &bookSrv}
+
+	r := gin.Default()
+	r.GET("/books", bookCtrl.GetBook)
+	r.Run()
+}
+```
+
+Debes notar el orden en el que deben ser inicializados, de la dependencia más profunda a la más superficial.
+
+Esto es perfecto si tienes un proyecto pequeño, pero entre más crezca vas a "ensuciar" más tu `main.go`, que debería ser solo el punto de entrada y no contener nada más, ¿cómo mejoramos este código?
+
+Podemos crear funciones para inicializar cada una de las dependencias, llamándolas `New...()` o `Provide...()` y moviéndolas a un nuevo file que se encargue de manejar todas tus dependencias.
+
+En mi caso lo moví a un módulo llamado app y cree el file `app.go` que contiene la función `Run()` que inicializa todas las dependencias e inicializa el servidor.
+
+```go
+func Run() {
+  bookRepo:= providers.ProvideBookRepository()
+  bookService:= providers.ProvideBookService(bookRepo)
+  bookController:= providers.ProvideBookController(bookService)
+  router:= HttpRouter(bookController)
+  router.Run(":8080")
+}
+
+```
+
+La estructura de archivos de este proyecto es la siguiente en este punto:
+
+```markdown
+.
+├── 📁 src  
+│ └── 📁 app Inyección de dependencias e inicializadores de la app.
+│ └── 📁 providers Proveedores(funciones que inicializan structs) de todos los módulos.
+│ │ └── 📄 controllers.go
+│ │ └── 📄 services.go
+│ │ └── 📄 repositories.go
+│ └── app.go Acá va la función Run() que llama a todos los proveedores e inicializa el servidor.
+│ └── 📄 router.go Configuración y ruteo del servidor web.
+│ └── 📁 controller Controladores que reciben las requests.
+│ └── 📁 service Lógica de negocio, modificaciones de modelos, etc.
+│ └── 📁 repository Capa que accede a los datos.
+│ └── 📄 main.go Llama a app.Run().
+└──
+```
