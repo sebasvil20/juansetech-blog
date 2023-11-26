@@ -11,57 +11,52 @@ const {
 } = Astro.props
 ---
 
-<article class='grid grid-rows-[300px_auto] md:grid-rows-[300px_220px] min-h-full group'>
-	<a class='relative overflow-hidden' href={`/post/${slug}/`}>
-		<Image
-			src={heroImage}
-			width={600}
-			height={200}
-			format='webp'
-			class='h-full min-w-full object-cover hover:scale-[101%] transition-all duration-200 rounded-[2px]'
-			alt={`img de ${title}`}
-		/>
-
-		<div class='z-30 absolute bottom-0 w-full h-20'>
-			<div class='-z-10 absolute bottom-0 glass w-full min-h-full'></div>
-			<div class='flex items-center justify-between gap-x-1 text-white px-6 py-4'>
-				<div class='flex flex-col gap-1 items-center justify-center'>
-					<FormattedDate date={pubDate} />
-					<span class='text-sm'> {readTime}</span>
-				</div>
-
-				<span class='pb-4'>{category}</span>
-			</div>
+<article class='flex gap-8 items-start min-h-full mb-8'>
+	<a href={`/post/${slug}/`}>
+		<div class='block w-[150px] h-[150px]'>
+			<Image
+				src={heroImage}
+				width={150}
+				height={150}
+				format='webp'
+				class='rounded-2xl hover:scale-[102%] transition-all duration-200'
+				alt={`Imágen de ${title}`}
+			/>
 		</div>
 	</a>
-
-	<div class='flex justify-between flex-col gap-4 md:gap-0 py-6 pl-1'>
-		<div class='flex flex-col gap-3'>
-			<div class='flex flex-col gap-2'>
-				<a class='text-2xl font-semibold -tracking-wider' href={`/post/${slug}/`}>
-					{title}
+	<div class='flex flex-col gap-4 text-sm'>
+		<a
+			class='text-xl md:text-3xl font-bold underline decoration-1 hover:decoration-2 underline-offset-4 dark:text-gray-200 -tracking-wider'
+			href={`/post/${slug}/`}
+		>
+			{title}
+		</a>
+		<p
+			class='overflow-hidden line-clamp-4 text-gray-700 dark:text-gray-200 mb-5 md:text-lg font-[400] md:pr-[15%]'
+		>
+			{description}
+		</p>
+		<div class='flex items-center gap-4'>
+			<div class='flex justify-between items-center'>
+				<a
+					href={`/post/${slug}/`}
+					class='flex justify-center items-center dark:text-white rounded-full hover:translate-x-1 transition-transform duration-150 ease-in-out font-semibold gap-1 group'
+					aria-label={`ir a ${title}`}
+				>
+					Leer <span
+						class='mt-[1px] group-hover:rotate-45 transition-transform duration-250 ease-in-out'
+						><ArrowUp width='18' height='18' /></span
+					>
 				</a>
 			</div>
-
-			<p
-				class='overflow-hidden line-clamp-3 text-gray-700 dark:text-white mb-5 font-[400] md:pr-[15%]'
+			<span class='text-cyan-500'>{category}</span>
+			<FormattedDate date={pubDate} />
+			<span
+				class="text-sm relative sm:before:content-['●'] sm:before:text-[7px] sm:before:absolute sm:before:left-[-10px]"
 			>
-				{description}
-			</p>
+				{readTime}</span
+			>
 		</div>
-
-		<footer class='flex justify-between items-center'>
-			<a
-				href={`/post/${slug}/`}
-				class='flex justify-center items-center dark:text-white rounded-full hover:translate-x-1 transition-transform duration-150 ease-in-out font-semibold gap-1 group'
-				aria-label={`ir a ${title}`}
-			>
-				Leer <span
-					class='mt-[1px] group-hover:rotate-45 transition-transform duration-250 ease-in-out'
-					><ArrowUp width='18' height='18' /></span
-				>
-			</a>
-		</footer>
 	</div>
 </article>
 

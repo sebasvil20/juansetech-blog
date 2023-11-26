@@ -34,13 +34,13 @@
 	},
 	"dependencies": {
 		"@astrojs/rss": "3.0.0",
-		"astro": "3.5.3"
+		"astro": "3.5.5"
 	},
 	"devDependencies": {
 		"tinacms": "^1.5.21",
 		"@tinacms/cli": "^1.5.30",
 		"@astrojs/mdx": "1.1.1",
-		"@astrojs/sitemap": "3.0.1",
+		"@astrojs/sitemap": "3.0.3",
 		"@astrojs/tailwind": "5.0.1",
 		"@pagefind/default-ui": "^1.0.3",
 		"@tailwindcss/typography": "0.5.10",
@@ -50,11 +50,11 @@
 		"eslint-plugin-astro": "^0.29.1",
 		"eslint-plugin-jsx-a11y": "^6.7.1",
 		"husky": "^8.0.3",
-		"lint-staged": "^14.0.1",
+		"lint-staged": "^15.1.0",
 		"mdast-util-to-string": "^4.0.0",
 		"motion": "^10.16.4",
 		"pagefind": "^1.0.4",
-		"prettier": "^3.0.3",
+		"prettier": "^3.1.0",
 		"prettier-config-standard": "^7.0.0",
 		"prettier-plugin-astro": "^0.12.0",
 		"reading-time": "^1.5.0",
