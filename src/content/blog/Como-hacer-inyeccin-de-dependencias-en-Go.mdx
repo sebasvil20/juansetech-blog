@@ -137,7 +137,7 @@ La estructura de archivos de este proyecto es la siguiente en este punto:
 └──
 ```
 
-El repositorio con todos los archivos lo tienes aca: [sebasvil20/blog-di](https://github.com/sebasvil20/blog-di 'sebasvil20/blog-di')
+El repositorio con todos los archivos lo tienes acá: [sebasvil20/blog-di](https://github.com/sebasvil20/blog-di 'sebasvil20/blog-di')
 
 Con esto, deberás tener una API corriendo en el puerto _8080_ que cuando le pegas al endpoint `GET /books` vas a recibir una lista en json con dos libros:
 
@@ -145,7 +145,7 @@ Con esto, deberás tener una API corriendo en el puerto _8080_ que cuando le peg
 {"books":[{"id":1,"title":"El señor de los anillos","author":"J.R.R. Tolkien"},{"id":2,"title":"Cien años de soledad","author":"Gabriel García Márquez"}]}
 ```
 
-Y eso sería de la inyección de dependencias manual, como puedes ver es bastante simple y fácil de seguir, pero tiene un problema: cuando el proyecto crece se puede volver difícil de controlar y mantener, pasemos a ver más alternativas para hacer inyección de dependencias en Go.
+Y eso sería de la inyección de dependencias manual, como puedes ver, es bastante simple y fácil de seguir, pero tiene un problema: cuando el proyecto crece se puede volver difícil de controlar y mantener, pasemos a ver más alternativas para hacer inyección de dependencias en Go.
 
 ## DI con Uber/fx: Inyección de dependencias con fx
 
@@ -153,7 +153,7 @@ Reutilizaremos la mayoría del código del ejemplo pasado, solo cambiaremos las 
 
 Toda la documentación de uber fx y su repo: [https://github.com/uber-go/fx](https://github.com/uber-go/fx)
 
-Como paso principal, para instalar uber/fx corres el siguiente comando:
+Como paso principal, para instalar _uber/fx_ corres el siguiente comando:
 
 ```
 go get go.uber.org / fx@v1
@@ -161,9 +161,9 @@ go get go.uber.org / fx@v1
 
 La lógica inicial es la misma que con la inyección manual de dependencias: Debes tener todo estructurado en interfaces y structs, una vez tengas bien definidas estas cosas, pasemos a lo especifico de Uber FX:
 
-Lo primero que debemos entender es que uber FX inyecta las dependencias en tiempo de ejecución, y te da control sobre el ciclo de vida de tu aplicación, por ejemplo, que quieres hacer una vez se inicialicen tus dependencias o que quieres hacer una vez la app muera, esto es útil para casos donde necesitemos hacer cleanup de una base de datos por ejemplo.
+Lo primero que debemos entender es que uber FX inyecta las dependencias en tiempo de ejecución, y te da control sobre el ciclo de vida de tu aplicación, por ejemplo, que quieres hacer una vez se inicialicen tus dependencias o que quieres hacer una vez la app muera, esto es útil para casos donde necesitemos hacer _cleanup_ de una base de datos por ejemplo.
 
-Además del ciclo de vida, te deja organizar tus dependencias en "Módulos" que no son más que grupos de dependencias, así definimos un módulo para fx (En la carpeta de providers cree un file llamado `books_module`):
+Además del ciclo de vida, te deja organizar tus dependencias en "Módulos" que no son más que grupos de dependencias, así definimos un módulo para fx (En la carpeta pkg de `providers` cree un file llamado `books_module`):
 
 ```go
 
@@ -189,13 +189,13 @@ var BooksModule = fx.Module("Books",
 
 ```
 
-fx.Module recibe tanto el nombre del módulo como las funciones propias de fx como fx.Provide o fx.Invoke, el nombre del módulo sirve únicamente para loggear y hacer troubleshooting, lo vas a ver cuando inicialices la app.
+`fx.Module` recibe tanto el nombre del módulo como las funciones propias de fx como **`fx.Provide`** o `fx.Invoke`, el nombre del módulo sirve únicamente para loggear y hacer troubleshooting, lo vas a ver cuando inicialices la app.
 
-fx.Provide es una función que como su nombre indica, provee, esta la debes usar cuando el return de esa función lo van a usar en otras funciones, por ejemplo el servicio de libros, services.IBookService, lo va a usar el controller para inyectárselo, por eso usamos fx.Provide.
+`fx.Provide` es una función que como su nombre indica, provee, esta la debes usar cuando el return de esa función lo van a usar en otras funciones, por ejemplo el servicio de libros, `services.IBookService`, lo va a usar el controller para inyectárselo, por eso usamos `fx.Provide`.
 
-fx.Invoke invoca funciones que no necesariamente lo que devuelven lo vamos a usar, pueden devolver un error (fx los maneja automáticamente si una de estas devuelve error). Esta función es perfecta para decorar cosas o simplemente inicializar algo que no devuelve nada.
+`fx.Invoke` invoca funciones que no necesariamente lo que devuelven lo vamos a usar, pueden devolver un error (fx los maneja automáticamente si una de estas devuelve error). Esta función es perfecta para decorar cosas o simplemente inicializar algo que no devuelve nada.
 
-Ahora en el app.go podemos llamar al módulo e inicializar el resto de cosas que necesitemos. Además, como mencioné anteriormente, fx te deja controlar el ciclo de vida de las dependencias y es al menos necesario que definas el hook onStart. El archivo app.go quedaría asi:
+Ahora en el `app.go` podemos llamar al módulo e inicializar el resto de cosas que necesitemos. Además, como mencioné anteriormente, fx te deja controlar el ciclo de vida de las dependencias y es al menos necesario que definas el hook `onStart`. El archivo `app.go` quedaría así:
 
 ```go
 
@@ -220,13 +220,13 @@ func serve(lifecycle fx.Lifecycle, router * gin.Engine) {
 
 ```
 
-La función Run() es la que creamos nosotros, acá invocamos e inicializamos todas las dependencias.
+La función `Run()` es la que creamos nosotros, acá invocamos e inicializamos todas las dependencias.
 
-Primero creamos una instancia de fx con fx.New() que recibe tantos parámetros (de tipo fx.Option) como necesites. Nótese que en los casos de los módulos solo hacemos referencia al módulo, ya que adentro del módulo llamamos a fx.Provide para las dependencias. Además, nótese la invocación (fx.Invoke) de la función serve, que recibe el ciclo de vida de fx y más parámetros que requieras, el resto de parámetros fx los resuelve automáticamente, tomando los return values de los fx.Provide.
+Primero creamos una instancia de fx con `fx.New()` que recibe tantos parámetros (de tipo `fx.Option`) como necesites. Nótese que en los casos de los módulos solo hacemos referencia al módulo, ya que adentro del módulo llamamos a `fx.Provide` para las dependencias. Además, nótese la invocación (`fx.Invoke`) de la función `serve`, que recibe el ciclo de vida de fx y más parámetros que requieras, el resto de parámetros fx los resuelve automáticamente, tomando los return values de los `fx.Provide`.
 
-En la función serve le sumamos un item al ciclo de vida de fx con lifecycle.Append y le pasamos el hook que queremos, en nuestro caso queremos que cuando ya termine de resolver las dependencias, llame al router de gin e inicialice el servidor.
+En la función `serve` le sumamos un item al ciclo de vida de fx con `lifecycle.Append` y le pasamos el hook que queremos, en nuestro caso queremos que cuando ya termine de resolver las dependencias, llame al router de gin e inicialice el servidor.
 
-Nuestro main.go queda igual que en la anterior, solamente llamamos al app.Run()
+Nuestro `main.go` queda igual que en la anterior, solamente llamamos al `app.Run()`
 
 ```go
 func main() {
