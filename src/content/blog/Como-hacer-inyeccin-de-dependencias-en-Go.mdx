@@ -6,7 +6,7 @@ description: >-
   Este post te guiará a través de diversas alternativas, permitiéndote comparar
   y elegir la mejor opción para tu proyecto. Optimiza tu código y lleva tu
   desarrollo en Go al siguiente nivel. ¡No te pierdas esta guía esencial!
-pubDate: 2023-11-23T05:00:00.000Z
+pubDate: 2024-01-05T05:00:00.000Z
 draft: false
 tags:
   - '#Backend'
@@ -16,11 +16,15 @@ tags:
 title: Como hacer inyección de dependencias en Go
 ---
 
-¿Cansado de depender de variables globales para arrancar tu logger? ¿Deseas garantizar que todas tus capas se inicialicen en un único lugar y solo una vez? ¿Utilizas interfaces y structs para definir tus módulos, pero te enfrentas al desafío de pasar dependencias inicializadas entre ellos? Prepárate, porque en este artículo exploraremos diversas estrategias para la inyección de dependencias en Go. Desde enfoques sin librerías hasta aquellos que las incorporan, descubrirás los pros y contras de cada uno. ¡Es hora de optimizar tu código y elevar tus habilidades en Go al siguiente nivel!
+¿Cansado de depender de variables globales para arrancar tu logger? ¿Deseas garantizar que todas tus capas se inicialicen en un único lugar y solo una vez? ¿Utilizas interfaces y structs para definir tus módulos, pero te enfrentas al desafío de pasar dependencias inicializadas entre ellos? En este artículo exploraremos diversas estrategias para la inyección de dependencias en Go. Desde enfoques sin librerías hasta aquellos que las incorporan, descubrirás los pros y contras de cada uno.
+
+## ¿Por qué hacer inyección de dependencias en Go?
+
+La inyección de dependencias en Go ofrece una metodología eficaz para mejorar la modularidad y mantenibilidad del código. Al evitar el uso de variables globales, promueve un diseño más limpio y cohesivo, facilitando la comprensión y modificación del código. Además, proporciona una mayor testabilidad al permitir la sustitución sencilla de dependencias durante las pruebas unitarias, favoreciendo el desarrollo de software robusto y libre de acoplamientos innecesarios. La inyección de dependencias también fomenta la reutilización de componentes, al facilitar la conexión de módulos sin depender de implementaciones concretas.
 
 ## Inyección de dependencias sin librerías en Go:
 
-Para lograr hacer inyección de dependencias en Go sin librerías debemos tener en cuenta que para lograr esto es necesario el uso de interfaces y structs para la definición de cada uno de tus módulos, esto va a ser específicamente útil al momento de testear toda tu aplicación. La lógica es simple, una función `New...()` o `Provide...()` que cree una instancia de tu módulo e inicializarlos luego en algún fichero central de tu aplicación.
+Para lograr hacer inyección de dependencias en Go sin librerías debemos tener en cuenta que es necesario el uso de interfaces y structs para la definición de cada uno de tus módulos, esto va a ser específicamente útil al momento de testear toda tu aplicación. La lógica es simple, una función `New...()` o `Provide...()` que cree una instancia de tu módulo e inicializarlos luego en algún fichero central de tu aplicación.
 
 Veámoslo con un ejemplo, una API de libros básica con una db mockeada. Tenemos un controlador, un servicio y un repositorio, cada uno necesita del otro (dependencias), por ejemplo el controlador necesita un servicio y el servicio necesita un repositorio. Let's dig into code.
 
@@ -29,21 +33,16 @@ _Disclaimer: En estos ejemplos utilizo [Gin Gonic ](https://github.com/gin-gonic
 `book_repository.go`
 
 ```go
-type IBookRepository interface {
-	GetBook(ctx context.Context, id string) (any, error)
+type IBooksRepository interface {
+	GetAll(ctx context.Context) ([]models.Book, error)
 }
 
-type BookRepository struct {
-	DBMock map[string]any
+type BooksRepository struct {
+	DB []models.Book
 }
 
-func (repo *BookRepository) GetBook(ctx context.Context, id string) (any, error) {
-	book, ok := repo.DBMock[id]
-	if !ok {
-		return nil, errors.New("no books found")
-	}
-
-	return book, nil
+func (r *BooksRepository) GetAll(ctx context.Context) ([]models.Book, error) {
+	return r.DB, nil
 }
 
 ```
@@ -51,16 +50,16 @@ func (repo *BookRepository) GetBook(ctx context.Context, id string) (any, error)
 `book_service.go`
 
 ```go
-type IBookService interface {
-  GetBook(ctx context.Context, id string)(any, error)
+type IBooksService interface {
+	GetAll(ctx context.Context) ([]models.Book, error)
 }
 
-type BookService struct {
-	BookRepository repository.IBookRepository
+type BooksService struct {
+	Repo repositories.IBooksRepository
 }
 
-func(srv * BookService) GetBook(ctx context.Context, id string)(any, error) {
-  return srv.BookRepository.GetBook(ctx, id)
+func (s *BooksService) GetAll(ctx context.Context) ([]models.Book, error) {
+	return s.Repo.GetAll(ctx)
 }
 ```
 
@@ -68,20 +67,18 @@ func(srv * BookService) GetBook(ctx context.Context, id string)(any, error) {
 
 ```go
 type IBooksController interface {
-	GetBook(c *gin.Context)
+	GetAll(c *gin.Context)
 }
 
 type BooksController struct {
-	BooksService service.IBookService
+	Service services.IBooksService
 }
 
-func (ctrl *BooksController) GetBook(c *gin.Context) {
-	book, err := ctrl.BooksService.GetBook(c, c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, book)
+func (c *BooksController) GetAll(ctx *gin.Context) {
+	books, _ := c.Service.GetAll(ctx)
+	ctx.JSON(200, gin.H{
+		"books": books,
+	})
 }
 ```
 
@@ -89,13 +86,13 @@ Una forma fácil para inicializar y pasar todas las dependencias necesarias pued
 
 ```go
 func main() {
-	bookRepo := repository.BookRepository{DBMock: map[string]any{}}
-	bookSrv := service.BookService{BookRepository: &bookRepo}
-	bookCtrl := controller.BooksController{BooksService: &bookSrv}
+	bookRepo := repositories.BooksRepository{DB: []models.Book{}}
+	bookSrv := services.BooksService{Repo: &bookRepo}
+	bookCtrl := controllers.BooksController{Service: &bookSrv}
 
 	r := gin.Default()
-	r.GET("/books", bookCtrl.GetBook)
-	r.Run()
+	r.GET("/books", bookCtrl.GetAll)
+	r.Run(":8080")
 }
 ```
 
@@ -105,15 +102,17 @@ Esto es perfecto si tienes un proyecto pequeño, pero entre más crezca vas a "e
 
 Podemos crear funciones para inicializar cada una de las dependencias, llamándolas `New...()` o `Provide...()` y moviéndolas a un nuevo file que se encargue de manejar todas tus dependencias.
 
-En mi caso lo moví a un módulo llamado app y cree el file `app.go` que contiene la función `Run()` que inicializa todas las dependencias e inicializa el servidor.
+En mi caso lo moví a un módulo llamado app y cree el file `app.go` que contiene la función `Run()` que inicializa todas las dependencias e inicializa el servidor. Las funciones que inicializan las dependencias las moví para un pkg llamado `providers`.
 
 ```go
 func Run() {
-  bookRepo:= providers.ProvideBookRepository()
-  bookService:= providers.ProvideBookService(bookRepo)
-  bookController:= providers.ProvideBookController(bookService)
-  router:= HttpRouter(bookController)
-  router.Run(":8080")
+  mockedDB:= providers.ProvideDatabase()
+	bookRepo:= providers.ProvideBooksRepository(mockedDB)
+	bookService:= providers.ProvideBooksService(bookRepo)
+	bookController:= providers.ProvideBooksController(bookService)
+	router := providers.ProvideRouter()
+	providers.RegisterRoutes(router, bookController)
+	router.Run(":8080")
 }
 
 ```
@@ -128,6 +127,7 @@ La estructura de archivos de este proyecto es la siguiente en este punto:
 │ │ └── 📄 controllers.go
 │ │ └── 📄 services.go
 │ │ └── 📄 repositories.go
+│ │ └── 📄 router.go Funciones relacionadas al routero de la API.
 │ └── 📄 app.go Acá va la función Run() que llama a todos los proveedores e inicializa el servidor.
 │ └── 📄 router.go Configuración y ruteo del servidor web.
 │ └── 📁 controller Controladores que reciben las requests.
@@ -136,3 +136,106 @@ La estructura de archivos de este proyecto es la siguiente en este punto:
 │ └── 📄 main.go Llama a app.Run().
 └──
 ```
+
+El repositorio con todos los archivos lo tienes aca: [sebasvil20/blog-di](https://github.com/sebasvil20/blog-di 'sebasvil20/blog-di')
+
+Con esto, deberás tener una API corriendo en el puerto _8080_ que cuando le pegas al endpoint `GET /books` vas a recibir una lista en json con dos libros:
+
+```javascript
+{"books":[{"id":1,"title":"El señor de los anillos","author":"J.R.R. Tolkien"},{"id":2,"title":"Cien años de soledad","author":"Gabriel García Márquez"}]}
+```
+
+Y eso sería de la inyección de dependencias manual, como puedes ver es bastante simple y fácil de seguir, pero tiene un problema: cuando el proyecto crece se puede volver difícil de controlar y mantener, pasemos a ver más alternativas para hacer inyección de dependencias en Go.
+
+## DI con Uber/fx: Inyección de dependencias con fx
+
+Reutilizaremos la mayoría del código del ejemplo pasado, solo cambiaremos las partes de la inyección de dependencias. Te dejo el repositorio con todos los ejemplos nuevamente: [sebasvil20/blog-di](https://github.com/sebasvil20/blog-di 'sebasvil20/blog-di').
+
+Toda la documentación de uber fx y su repo: [https://github.com/uber-go/fx](https://github.com/uber-go/fx)
+
+Como paso principal, para instalar uber/fx corres el siguiente comando:
+
+```
+go get go.uber.org / fx@v1
+```
+
+La lógica inicial es la misma que con la inyección manual de dependencias: Debes tener todo estructurado en interfaces y structs, una vez tengas bien definidas estas cosas, pasemos a lo especifico de Uber FX:
+
+Lo primero que debemos entender es que uber FX inyecta las dependencias en tiempo de ejecución, y te da control sobre el ciclo de vida de tu aplicación, por ejemplo, que quieres hacer una vez se inicialicen tus dependencias o que quieres hacer una vez la app muera, esto es útil para casos donde necesitemos hacer cleanup de una base de datos por ejemplo.
+
+Además del ciclo de vida, te deja organizar tus dependencias en "Módulos" que no son más que grupos de dependencias, así definimos un módulo para fx (En la carpeta de providers cree un file llamado `books_module`):
+
+```go
+
+var BooksModule = fx.Module("Books",
+	fx.Provide(func(db []models.Book) repositories.IBooksRepository {
+		return &repositories.BooksRepository{
+			DB: db,
+		}
+	}),
+
+	fx.Provide(func(repo repositories.IBooksRepository) services.IBooksService {
+		return &services.BooksService{
+			Repo: repo,
+		}
+	}),
+
+	fx.Provide(func(srv services.IBooksService) *controllers.BooksController {
+		return &controllers.BooksController{
+			Service: srv,
+		}
+	}),
+)
+
+```
+
+fx.Module recibe tanto el nombre del módulo como las funciones propias de fx como fx.Provide o fx.Invoke, el nombre del módulo sirve únicamente para loggear y hacer troubleshooting, lo vas a ver cuando inicialices la app.
+
+fx.Provide es una función que como su nombre indica, provee, esta la debes usar cuando el return de esa función lo van a usar en otras funciones, por ejemplo el servicio de libros, services.IBookService, lo va a usar el controller para inyectárselo, por eso usamos fx.Provide.
+
+fx.Invoke invoca funciones que no necesariamente lo que devuelven lo vamos a usar, pueden devolver un error (fx los maneja automáticamente si una de estas devuelve error). Esta función es perfecta para decorar cosas o simplemente inicializar algo que no devuelve nada.
+
+Ahora en el app.go podemos llamar al módulo e inicializar el resto de cosas que necesitemos. Además, como mencioné anteriormente, fx te deja controlar el ciclo de vida de las dependencias y es al menos necesario que definas el hook onStart. El archivo app.go quedaría asi:
+
+```go
+
+func Run() {
+  fx.New(
+    fx.Provide(providers.ProvideDatabase),
+    providers.BooksModule,
+    fx.Provide(providers.ProvideRouter),
+    fx.Invoke(providers.RegisterRoutes),
+    fx.Invoke(serve),
+  ).Run()
+}
+
+func serve(lifecycle fx.Lifecycle, router * gin.Engine) {
+  lifecycle.Append(fx.Hook{
+    OnStart: func(context.Context) error {
+    go router.Run()
+			return nil
+  },
+	})
+}
+
+```
+
+La función Run() es la que creamos nosotros, acá invocamos e inicializamos todas las dependencias.
+
+Primero creamos una instancia de fx con fx.New() que recibe tantos parámetros (de tipo fx.Option) como necesites. Nótese que en los casos de los módulos solo hacemos referencia al módulo, ya que adentro del módulo llamamos a fx.Provide para las dependencias. Además, nótese la invocación (fx.Invoke) de la función serve, que recibe el ciclo de vida de fx y más parámetros que requieras, el resto de parámetros fx los resuelve automáticamente, tomando los return values de los fx.Provide.
+
+En la función serve le sumamos un item al ciclo de vida de fx con lifecycle.Append y le pasamos el hook que queremos, en nuestro caso queremos que cuando ya termine de resolver las dependencias, llame al router de gin e inicialice el servidor.
+
+Nuestro main.go queda igual que en la anterior, solamente llamamos al app.Run()
+
+```go
+func main() {
+  app.Run()
+}
+```
+
+Con esto deberías tener un servidor corriendo en el 8080 recibiendo peticiones correctamente, además con dependencias resueltas por uber fx.
+
+El ejemplo completo por si quieres probar directamente lo encuentras en el repo: [sebasvil20/blog-di](https://github.com/sebasvil20/blog-di 'sebasvil20/blog-di').
+
+Hey! 😁 ¡Has llegado al final! Si te ha gustado el artículo o te ha sido útil, no dudes en compartirlo, puedes decirme tus opiniones a través de mi cuenta de [X / Twitter.](https://twitter.com/JuanseTech 'X / Twitter')
