@@ -1,0 +1,107 @@
+---
+heroImage: /src/assets/images/ghoper-experiment.png
+category: Desarrollo de software
+description: >-
+  En este artículo de Go, exploraremos paso a paso cómo implementar la
+  funcionalidad de carga de archivos a un servicio de almacenamiento en la nube
+  S3 de AWS directamente desde tu API en Go. Descubre las mejores prácticas y
+  las bibliotecas clave de Go para gestionar la interacción con S3, facilitando
+  la integración de la capacidad de subir archivos a tu aplicación Go con
+  eficiencia y seguridad.
+pubDate: 2024-01-15T05:00:00.000Z
+draft: false
+tags:
+  - S3
+  - AWS
+  - Backend
+  - Golang
+  - Go
+title: Como subir archivos a un S3 de aws desde tu API de Go
+---
+
+En este artículo, nos sumergiremos en el fascinante mundo de Go y AWS, explorando cómo cargar archivos directamente desde tu API de Go a Amazon S3. Pero, ¿qué es S3? Para los que no lo saben, Amazon Simple Storage Service (S3) es un servicio de almacenamiento en la nube que te permite almacenar y recuperar cualquier cantidad de datos desde cualquier lugar en la web. Es como tener un gigantesco almacén virtual listo para alojar tus archivos.
+
+Ahora, antes de que empiecen los sudores fríos pensando en la configuración de AWS, ¡respira tranquilo! Nos centraremos en la parte emocionante: cómo subir archivos a S3 desde tu API en Go. No te abrumaremos con detalles tediosos de configuración, sino que nos sumergiremos directamente en la acción. Si quieres saber más sobre AWS y su configuración, te invito a que busques más recursos relacionados, en este artículo daremos por hecho que tienes un S3 configurado con sus claves de acceso.
+
+¿Por qué querrías hacer esto, te preguntas? Bueno, imagina tener una aplicación Go que necesita manejar archivos de usuarios, como imágenes de perfil o documentos. En lugar de sobrecargar tu servidor con el peso de estos archivos, puedes aprovechar S3 como un almacenamiento confiable y escalable. Además, podrías abrir las puertas a funcionalidades asombrosas, como compartir enlaces de descarga directa o incluso crear un servicio de almacenamiento en la nube personalizado. Así que, ¡vamos a sumergirnos en el mundo de Go y S3, donde la magia del código se encuentra con la potencia del almacenamiento en la nube!
+
+## Librerías necesarias: AWS SDK para Go
+
+Amazon nos provee de un sdk para conectarnos con todos los servicios de aws, te dejo la documentación y más detalles acá: [aws sdk for go](https://aws.github.io/aws-sdk-go-v2/docs/getting-started/ 'AWS SDK for Go').
+
+Para instalar todas las partes que necesitamos, debemos correr los siguientes comandos en la raíz de nuestro proyecto (con un go mod ya inicializado)
+
+```
+go get github.com/aws/aws-sdk-go-v2
+go get github.com/aws/aws-sdk-go-v2/config
+go get github.com/aws/aws-sdk-go-v2/service/s3
+```
+
+## Variables de entorno
+
+Como mencioné al principio, no nos vamos a centrar en el lado de AWS. Si no has sacado las llaves de acceso del S3, puedes seguir este [paso a paso](https://aws.github.io/aws-sdk-go-v2/docs/getting-started/#to-get-your-access-key-id-and-secret-access-key 'Paso a paso para sacar la access key y secret access key') y luego volver a esta parte.
+
+Luego de que tengas la Access Key y la Secret Access Key puedes tomar varios caminos: o lo haces programáticamente o simplemente guardas esas dos variables en tus variables de entorno.
+
+Para hacerlo programáticamente, en tu main.go puedes utilizar la función os.SetEnv() para setear las variables de entorno, por ejemplo:
+
+```go
+os.Setenv("AWS_SECRET_KEY", "secret key que no voy a poner aca y que no deberias subir a tu repo")
+os.Setenv("AWS_ACCESS_KEY", "access key que no voy a poner aca y que no deberias subir a tu repo")
+```
+
+O si no quieres hacerlo programáticamente, puedes hacerlo antes de correr el main.go, de esta forma:
+
+```
+export AWS_SECRET_KEY=clavesupersecreta && export AWS_ACCESS_KEY=accesskeysupersecreto && go run src/main.go
+```
+
+## Conexión a nuestro bucket de S3 desde una app de Go
+
+Con las librerías instaladas y las variables de entorno correctamente seteadas vamos a inicializar el cliente de nuestro bucket de S3 en el main.go. Esto puedes hacerlo en donde veas conveniente, por rapidez lo voy a inicializar en el main.go.
+
+Lo primero que debemos hacer es cargar las configuraciones, para eso dentro de los pkgs que instalamos estaba el de configs.
+
+```go
+cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
+if err != nil {
+  log.Fatal(err)
+}
+```
+
+Nótese que la función LoadDefaultConfig() recibe primero un contexto y de segundo un array de cuantas configs quieras pasarle, en este caso solo quiero definir que la región de mi bucket es us-east-1, nada más. Dentro de la funcion intenta resolver de varias maneras nuestras credenciales, en nuestro caso las seteamos por variables de entorno y las resolverá de esa forma.
+
+Después al cliente de s3 le podremos pasar ese objeto de configuración:
+
+```go
+client := s3.NewFromConfig(cfg)
+```
+
+Y con esto tendremos un cliente de s3 completamente funcional con el cual podremos obtener y escribir archivos 🎊
+
+## Como obtener la lista de todos los archivos de un S3
+
+Con el cliente inicializado, podemos hacer una request para listar todos los archivos que tiene nuestro bucket, de la siguiente manera:
+
+```go
+output, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		Bucket: aws.String("nombre-de-tu-bucket"),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, object := range output.Contents {
+		log.Printf("key=%s", aws.ToString(object.Key))
+	}
+```
+
+La función ListObjetsV2() recibe varios criterios de búsqueda, te invito a que leas la documentación si quieres ver todas las opciones que permite; sin embargo, con este snippet deberías poder traerte todos los archivos que tengas en tu bucket de S3.
+
+En mi caso solo tengo un file, por lo que el output de la consola es solo el siguiente:
+
+```
+key = avatar1.jpg
+```
+
+## Como subir archivos a un bucket de S3 desde Go
