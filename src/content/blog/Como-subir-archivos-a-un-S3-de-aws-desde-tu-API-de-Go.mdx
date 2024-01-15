@@ -19,11 +19,13 @@ tags:
 title: Como subir archivos a un S3 de aws desde tu API de Go
 ---
 
-En este artículo, nos sumergiremos en el fascinante mundo de Go y AWS, explorando cómo cargar archivos directamente desde tu API de Go a Amazon S3. Pero, ¿qué es S3? Para los que no lo saben, Amazon Simple Storage Service (S3) es un servicio de almacenamiento en la nube que te permite almacenar y recuperar cualquier cantidad de datos desde cualquier lugar en la web. Es como tener un gigantesco almacén virtual listo para alojar tus archivos.
+En este artículo, nos sumergiremos en el fascinante mundo de Go y AWS, explorando cómo cargar archivos directamente desde tu API de Go a Amazon S3. Pero, ¿qué es S3? Para los que no lo saben, Amazon Simple Storage Service (S3) es un servicio de almacenamiento en la nube que te permite almacenar y recuperar archivos en la nube.
 
-Ahora, antes de que empiecen los sudores fríos pensando en la configuración de AWS, ¡respira tranquilo! Nos centraremos en la parte emocionante: cómo subir archivos a S3 desde tu API en Go. No te abrumaremos con detalles tediosos de configuración, sino que nos sumergiremos directamente en la acción. Si quieres saber más sobre AWS y su configuración, te invito a que busques más recursos relacionados, en este artículo daremos por hecho que tienes un S3 configurado con sus claves de acceso.
+Como disclaimer inicial, en este post no tocaremos el tema de configuración de AWS (ni del S3, ni de cloudfront), en este post tocaremos solo codigo: cómo subir archivos a S3 desde tu API en Go. Si quieres saber más sobre AWS y su configuración, te invito a que busques más recursos relacionados, en este artículo daremos por hecho que tienes un S3 configurado con sus claves de acceso.
 
-¿Por qué querrías hacer esto, te preguntas? Bueno, imagina tener una aplicación Go que necesita manejar archivos de usuarios, como imágenes de perfil o documentos. En lugar de sobrecargar tu servidor con el peso de estos archivos, puedes aprovechar S3 como un almacenamiento confiable y escalable. Además, podrías abrir las puertas a funcionalidades asombrosas, como compartir enlaces de descarga directa o incluso crear un servicio de almacenamiento en la nube personalizado. Así que, ¡vamos a sumergirnos en el mundo de Go y S3, donde la magia del código se encuentra con la potencia del almacenamiento en la nube!
+¿Por qué querrías hacer esto, te preguntas? Bueno, imagina tener una aplicación Go que necesita manejar archivos de usuarios, como imágenes de perfil o documentos. En lugar de sobrecargar tu servidor con el peso de estos archivos, puedes aprovechar S3 como un almacenamiento confiable y escalable. Además, podrías abrir las puertas a funcionalidades interesantes, como compartir enlaces de descarga directa o incluso crear un servicio de almacenamiento en la nube personalizado. Así que, vamos a sumergirnos en el mundo de Go y S3, donde la magia del código se encuentra con la potencia del almacenamiento en la nube
+
+Si quieres ver el código completo de una vez y empezar a probar, te dejo el repositorio creado para ejemplificar este post: [sebasvil20/s3-uploader-go-example](https://github.com/sebasvil20/s3-uploader-go-example 'sebasvil20/s3-uploader-go-example')
 
 ## Librerías necesarias: AWS SDK para Go
 
@@ -41,9 +43,9 @@ go get github.com/aws/aws-sdk-go-v2/service/s3
 
 Como mencioné al principio, no nos vamos a centrar en el lado de AWS. Si no has sacado las llaves de acceso del S3, puedes seguir este [paso a paso](https://aws.github.io/aws-sdk-go-v2/docs/getting-started/#to-get-your-access-key-id-and-secret-access-key 'Paso a paso para sacar la access key y secret access key') y luego volver a esta parte.
 
-Luego de que tengas la Access Key y la Secret Access Key puedes tomar varios caminos: o lo haces programáticamente o simplemente guardas esas dos variables en tus variables de entorno.
+Luego de que tengas la _Access Key_ y la _Secret Access Key_ puedes tomar varios caminos: o lo haces programáticamente o simplemente guardas esas dos variables en tus variables de entorno.
 
-Para hacerlo programáticamente, en tu main.go puedes utilizar la función os.SetEnv() para setear las variables de entorno, por ejemplo:
+Para hacerlo programáticamente, en tu `main.go` puedes utilizar la función `os.SetEnv()` para setear las variables de entorno, por ejemplo:
 
 ```go
 os.Setenv("AWS_SECRET_KEY", "secret key que no voy a poner aca y que no deberias subir a tu repo")
@@ -58,7 +60,7 @@ export AWS_SECRET_KEY=clavesupersecreta && export AWS_ACCESS_KEY=accesskeysupers
 
 ## Conexión a nuestro bucket de S3 desde una app de Go
 
-Con las librerías instaladas y las variables de entorno correctamente seteadas vamos a inicializar el cliente de nuestro bucket de S3 en el main.go. Esto puedes hacerlo en donde veas conveniente, por rapidez lo voy a inicializar en el main.go.
+Con las librerías instaladas y las variables de entorno correctamente seteadas vamos a inicializar el cliente de nuestro bucket de S3 en el `main.go`. Esto puedes hacerlo en donde veas conveniente, por rapidez lo voy a inicializar en el `main.go`.
 
 Lo primero que debemos hacer es cargar las configuraciones, para eso dentro de los pkgs que instalamos estaba el de configs.
 
@@ -69,7 +71,7 @@ if err != nil {
 }
 ```
 
-Nótese que la función LoadDefaultConfig() recibe primero un contexto y de segundo un array de cuantas configs quieras pasarle, en este caso solo quiero definir que la región de mi bucket es us-east-1, nada más. Dentro de la funcion intenta resolver de varias maneras nuestras credenciales, en nuestro caso las seteamos por variables de entorno y las resolverá de esa forma.
+Nótese que la función `LoadDefaultConfig()` recibe primero un contexto y de segundo un array de cuantas configs quieras pasarle, en este caso solo quiero definir que la región de mi bucket es _us-east-1_, nada más. Dentro de la función intenta resolver de varias maneras nuestras credenciales, en nuestro caso las seteamos por variables de entorno y las resolverá de esa forma.
 
 Después al cliente de s3 le podremos pasar ese objeto de configuración:
 
@@ -96,7 +98,7 @@ output, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 	}
 ```
 
-La función ListObjetsV2() recibe varios criterios de búsqueda, te invito a que leas la documentación si quieres ver todas las opciones que permite; sin embargo, con este snippet deberías poder traerte todos los archivos que tengas en tu bucket de S3.
+La función `ListObjetsV2()` recibe varios criterios de búsqueda, te invito a que leas la documentación si quieres ver todas las opciones que permite; sin embargo, con este snippet deberías poder traerte todos los archivos que tengas en tu bucket de S3.
 
 En mi caso solo tengo un file, por lo que el output de la consola es solo el siguiente:
 
@@ -104,4 +106,104 @@ En mi caso solo tengo un file, por lo que el output de la consola es solo el sig
 key = avatar1.jpg
 ```
 
+Si tienes [Cloudfront](https://aws.amazon.com/cloudfront/ 'AWS Cloudfront') configurado para los files de tu bucket de S3, puedes sumarle el dominio a todas las key que te aparezcan de tu s3, en mi caso el dominio de mi cloudfront configurado es [https://d3hdf3ix93p03c.cloudfront.net](https://d3hdf3ix93p03c.cloudfront.net) por lo que le puedo sumar el key del file y quedaría [https://d3hdf3ix93p03c.cloudfront.net/avatar1.jpg](https://d3hdf3ix93p03c.cloudfront.net/avatar1.jpg), si abres el link deberías poder obtener la imagen a través de cloudfront.
+
+Si no tienes Cloudfront configurado, debes acceder por el link directo al bucket S3, que puedes ver como se arma en la interfaz de aws, en mi caso es el nombre del bucket + s3.amazonaws.com/ + el nombre del file, por ejemplo:
+
+[https://juansetech-files.s3.amazonaws.com/avatar1.jpg](https://juansetech-files.s3.amazonaws.com/avatar1.jpg)
+
+Por lo que en go podemos hacer lo siguiente para armar cada link:
+
+```go
+for _, object := range output.Contents {
+  objectKey:= aws.ToString(object.Key)
+  log.Printf("key = %s Object Link = https://el-nombre-de-tu-bucket.s3.amazonaws.com/%s", objectKey, objectKey)
+}
+```
+
+Y el output cuando corremos el programa será el siguiente:
+
+```
+key = avatar1.jpg Object Link = https://el-nombre-de-tu-bucket.s3.amazonaws.com/avatar1.jpg
+
+```
+
 ## Como subir archivos a un bucket de S3 desde Go
+
+Como paso inicial vamos a crear un endpoint que reciba el archivo, el archivo que vamos a mandar al bucket de S3. No me voy a quedar mucho tiempo en esta parte, ya no es el tema como crear el endpoint, igualmente dejaré el código del endpoint:
+
+```go
+func(ctrl * UploaderController) UploadFile(w http.ResponseWriter, r * http.Request) {
+  _, fileHeader, err := r.FormFile("file")
+  if err != nil {
+    handleResponse(w, nil, err, http.StatusBadRequest)
+    return
+  }
+
+  if !isImage(fileHeader.Filename) {
+    handleResponse(w, nil, errors.New("unsupported file type"), http.StatusBadRequest)
+    return
+  }
+
+  fileURL, err := ctrl.UploaderSrv.UploadFile(r.Context(), fileHeader)
+  if err != nil {
+    handleResponse(w, nil, err, http.StatusInternalServerError)
+    return
+  }
+
+  handleResponse(w, fileURL, nil, http.StatusOK)
+}
+```
+
+En esa función leemos el file con el nombre "file" de la request, además hacemos validaciones adicionales, en mi caso solo quiero que se suban imágenes, por lo que hice una función isImage que válida la extensión del archivo.
+
+Para leer un archivo mandado en la request en Go, debemos llamar a la función r.FormFile() y pasarle el nombre de la prop que manda la request. En mi caso en la request en el campo "file" mando la imagen que quiero subir.
+
+En esencia, este endpoint lee el file de la request y lo manda al servicio, donde tenemos la función que sube el file al bucket con el siguiente código:
+
+```go
+func(srv * UploaderService) UploadFile(ctx context.Context, file * multipart.FileHeader)(string, error) {
+  openedFile, _ := file.Open()
+  fileContent, _ := io.ReadAll(openedFile)
+  fileName:= srv.generateFileName()
+  fileNameWithExt:= fmt.Sprintf("%s%s", fileName, path.Ext(file.Filename))
+
+  object:= s3.PutObjectInput{
+    Bucket: aws.String(config.BucketS3Name),
+    Key: aws.String(fileNameWithExt),
+    Body: bytes.NewReader(fileContent),
+    ContentType: aws.String(fmt.Sprintf("image/%v", path.Ext(file.Filename)[1:])),
+	}
+  _, err := srv.S3Client.PutObject(ctx, & object)
+  if err != nil {
+    return "", fmt.Errorf("couldn't upload file, try again later or contact admins - %s", err.Error())
+  }
+
+  return fmt.Sprintf("%s/%s", config.CDNURLPrefix, fileNameWithExt), nil
+}
+```
+
+En este snippet hacemos varias cosas:
+
+1. Abrimos el archivo para leer su contenido y lo guardamos en fileContent, esto será lo que subamos como body al bucket S3.
+2. Creamos el nombre del archivo random, en mi caso hice una función que genera un nombre aleatorio, podría ser un uuid, o la generación que prefieras. Recomiendo altamente que generes el nombre del archivo antes de subirlo y que no lo dejes con el nombre que sube el usuario, para evitar colisiones. Si estás haciendo un sistema donde el nombre del archivo importa para el usuario, intenta validarlo antes entonces o puedes hacer separación de archivos por usuarios, etc. En mi caso no importa el nombre del archivo, por lo que genero un ID único corto.\
+   \
+   Es un buen momento también para recomendar este excelente post sobre la [UX en los UUID](https://unkey.dev/blog/uuid-ux 'UX Of UUIDS') de Andreas Thomas.
+3. Creamos el objeto a mandar al bucket, con s3.PutObjectInput que recibe varias props, el nombre del bucket, la key del objeto a guardar, el body (contenido) y el tipo de contenido.
+4. Al cliente de S3 previamente inicializado le llamamos PutObject pasándole ese objeto previamente creado. Manejamos el error en caso de que falle la subida del archivo y si no devolvemos una url formada con la url de nuestro cdn (En mi caso cloudfront) + la key del objeto.\
+   Te recuerdo que si no tienes un CDN configurado puedes igual formar la url que acceda directo al archivo del S3 en vez de formarla por el CDN.
+
+Con esto tenemos nuestro servicio de subida de archivos completamente funcional, ahora podemos probarlo, con este curl de ejemplo:
+
+```powershell
+curl--location 'localhost:3000/upload' \
+--form 'file=@"/Users/jvillega/Downloads/ghoper-experiment.png"'
+```
+
+O puedes probarlo con Postman, solo importas ese curl y editas lo que necesites.
+
+Te vuelvo a dejar el repositorio con el código completo: [sebasvil20/s3-uploader-go-example](https://github.com/sebasvil20/s3-uploader-go-example 'sebasvil20/s3-uploader-go-example')
+
+🎉 Y listo 🎉 Tienes un módulo de subida de archivos en tu API que puedes usar para lo que prefieras, si quieres subir imágenes para manejar fotos de perfiles de usuario, fotos de productos, posts para una red social, etc.
+
+Si te gustó y te sirvió el post recuerda compartirlo para ayudar a muchas más personas a que aprendan a como subir y obtener archivos de un S3 con Go 😃.
