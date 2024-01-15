@@ -20,5 +20,8 @@ const posts = await getPostByTag(tag)
 
 <BaseLayout title={tag}>
 	<TitlePage title={tag} />
-	<ListPosts posts={posts} />
+	<div>
+		<h2 class='text-lg font-medium tracking-wide text-end mb-4'>Últimos posts sobre '{tag}'</h2>
+		<ListPosts posts={posts} />
+	</div>
 </BaseLayout>

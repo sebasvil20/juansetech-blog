@@ -16,5 +16,5 @@ export const siteConfig: SiteConfig = {
 	lang: 'es-ES',
 	ogLocale: 'es_ES',
 	shareMessage: 'Me ha encantado este artículo, queria compartirlo con ustedes 👀.',
-	paginationSize: 6 // Number of posts per page
+	paginationSize: 4 // Number of posts per page
 }

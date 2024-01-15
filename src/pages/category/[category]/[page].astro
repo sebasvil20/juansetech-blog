@@ -35,6 +35,11 @@ const posts = page.data
 <BaseLayout title={params.category}>
 	<TitlePage title={unsluglifyNameCategory} />
 	<ListCategories activeCategory={params.category} />
-	<ListPosts posts={posts} />
-	<Pagination page={page} />
+	<div>
+		<h2 class='text-lg font-medium tracking-wide text-end mb-4'>
+			Últimos posts de '{unsluglifyNameCategory}'
+		</h2>
+		<ListPosts posts={posts} />
+		<Pagination page={page} />
+	</div>
 </BaseLayout>
