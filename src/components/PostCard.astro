@@ -11,9 +11,9 @@ const {
 } = Astro.props
 ---
 
-<article class='flex gap-8 items-start min-h-full mb-8'>
+<article class='flex md:gap-8 items-start min-h-full mb-8'>
 	<a href={`/post/${slug}/`}>
-		<div class='block w-[150px] h-[150px]'>
+		<div class='w-[150px] h-[150px] md:block hidden'>
 			<Image
 				src={heroImage}
 				width={150}
@@ -36,7 +36,7 @@ const {
 		>
 			{description}
 		</p>
-		<div class='flex items-center gap-4'>
+		<div class='flex items-center gap-4 flex-wrap'>
 			<div class='flex justify-between items-center'>
 				<a
 					href={`/post/${slug}/`}
@@ -52,7 +52,7 @@ const {
 			<span class='text-cyan-500'>{category}</span>
 			<FormattedDate date={pubDate} />
 			<span
-				class="text-sm relative sm:before:content-['●'] sm:before:text-[7px] sm:before:absolute sm:before:left-[-10px]"
+				class="min-w-[80px] text-sm relative sm:before:content-['●'] sm:before:text-[7px] sm:before:absolute sm:before:left-[-10px]"
 			>
 				{readTime}</span
 			>
