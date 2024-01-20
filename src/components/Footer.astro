@@ -1,10 +1,46 @@
 ---
+import HeaderLink from './HeaderLink.astro'
+import GithubIcon from './icons/GithubIcon.astro'
+import TwitterIcon from './icons/TwitterIcon.astro'
+import LinkedinIcon from './icons/linkedinIcon.astro'
+
 const today = new Date()
+
+const SOCIALNETWORKS = [
+	{
+		name: 'Github',
+		url: 'https://github.com/sebasvil20',
+		icon: GithubIcon
+	},
+	{
+		name: 'Twitter',
+		url: 'https://twitter.com/juansetech',
+		icon: TwitterIcon
+	},
+	{
+		name: 'LinkedIn',
+		url: 'https://www.linkedin.com/in/sebasvil20/',
+		icon: LinkedinIcon
+	}
+]
 ---
 
-<footer class='flex justify-center items-center w-full h-28 border-t-2 md:text-base text-xs'>
-	&copy; {today.getFullYear()}
-	<a href='https://twitter.com/juansetech' target='_blank' rel='noopener noreferrer'>
-		&nbsp;JuanseTech
-	</a>. All rights reserved.
+<footer
+	class='flex flex-col justify-center items-center w-full border-t-2 md:text-base text-xs h-32 gap-4'
+>
+	<div class='flex justify-center items-center md:justify-end gap-3 md:p-0'>
+		{
+			SOCIALNETWORKS.map((network) => (
+				<HeaderLink class='' href={network.url} target='_blank' aria-label={network.name}>
+					<span>{<network.icon />} </span>
+				</HeaderLink>
+			))
+		}
+	</div>
+	<div class='flex justify-center items-center md:text-base text-xs'>
+		&copy; {today.getFullYear()}
+		<a href='https://twitter.com/juansetech' target='_blank' rel='noopener noreferrer'>
+			&nbsp;JuanseTech
+		</a>. All rights reserved.
+	</div>
 </footer>

@@ -5,6 +5,7 @@ import BaseLayout from '@/layouts/BaseLayout'
 import Tag from '@/components/Tag'
 import type { MarkdownHeading } from 'astro'
 import { Image } from 'astro:assets'
+import FooterCredits from '@/components/FooterCredits'
 
 type Props = {
 	id: CollectionEntry<'blog'>['id']
@@ -68,6 +69,7 @@ const articleDate = pubDate.toISOString()
 			<slot />
 		</div>
 	</article>
+	<FooterCredits />
 </BaseLayout>
 
 <script>
