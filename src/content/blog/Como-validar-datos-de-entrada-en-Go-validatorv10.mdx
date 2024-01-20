@@ -1,0 +1,169 @@
+---
+heroImage: /src/assets/images/validator-icon.png
+category: Desarrollo de software
+description: >-
+  La validación de datos de entrada siempre ha sido una tarea crítica para
+  garantizar la integridad y seguridad de tus aplicaciones. En este artículo
+  vamos a explorar Go validator v10, una librería que nos permite validar datos
+  de entrada que tiene mucho potencial. Cubriremos sus funciones principales y
+  como adoptar validaciones custom en nuestros modelos.
+pubDate: 2024-01-19T05:00:00.000Z
+draft: false
+tags:
+  - Validation
+  - Golang
+  - Go
+title: 'Como validar datos de entrada en Go: validator/v10'
+---
+
+La validación de datos de entrada siempre ha sido una tarea crítica para garantizar la integridad y seguridad de tus aplicaciones. En este artículo vamos a explorar Go validator v10, una librería que nos permite validar datos de entrada que tiene mucho potencial, cubriremos sus funciones principales y como adoptar validaciones custom en nuestros modelos.
+
+> ⚠️ Este artículo te va a ser útil sin importar que método de entrada utilices en tu aplicación, ya sea a través de jsons, yamls, entrada de texto por consola o el formato que uses, la librería validator/v10 actua sobre structs y variables de go, no sobre la entrada en si, por lo que el primer paso que tienes que hacer sin importar tu caso, es transformar esa entrada a un objeto/variable de Go.
+
+## Validaciones en Go con validator/v10
+
+Imagina que tienes este objeto (struct) de un estudiante y sus responsables en Go:
+
+```go
+type Student struct {
+	ID        string     `json:"id"`
+	Name      string     `json:"name"`
+	Age       uint8      `json:"age"`
+	Grade     uint8      `json:"grade"`
+	Guardians []Guardian `json:"guardians"`
+	Hobbies   []string   `json:"hobbies"`
+}
+
+type Guardian struct {
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Relationship string `json:"relationship"`
+	Phone        string `json:"phone"`
+}
+```
+
+Este objeto te permite almacenar el nombre, edad, grado, entre otras cosas. En tu API guardas esta información, pero tienes un gran peligro de que ingresen cualquier cosa en cada campo, por ejemplo en el campo phone de los responsables podrían poner un texto, o quieres limitar las opciones del parentesco, o quieres evitar que pongan edades surreales como "_edad 10000_", para ahorrarnos este tipo de problemas, validamos la información antes de manipularla y guardarla, en este caso lo vamos a hacer una librería llamada [validator](https://github.com/go-playground/validator 'Validator/v10 Github').
+
+Para instalar la librería debes correr el siguiente comando:
+
+```
+go get github.com/go-playground/validator/v10
+```
+
+> ⚠️ Para el momento de escritura de este post, la ultima version es la 10.17.0. En las actualizaciones podrian haber cambios no compatibles con lo aca mostrado.
+
+La librería funciona con una serie de tags dentro de nuestro struct, tags que colocamos dentro de los backticks (_\`\`_) de cada campo, y que deben ir dentro del wrapper `validate`, de la siguiente manera:
+
+```go
+type Student struct {
+	ID        string     `json:"id" validate:"required"`
+}
+```
+
+Dentro de _`validate`_ colocarás toda la lista de validaciones que necesites para ese campo, en la [documentación de la librería](https://github.com/go-playground/validator 'Validator/v10 Github') están todas listadas. Entre las más comunes que usaras (y que se explican por sí solas) tenemos: _required_, _min_, _max_, _len_, etc. Te invito a que revises la documentación para casos muy puntuales, sin embargo, si no encuentras una validación que se ajuste a lo que necesites, en este artículo también te enseñaré a hacer validaciones _custom_.
+
+Ahora, colocando algunas de estas validaciones en cada campo, nuestro modelo quedaría como lo siguiente:
+
+```go
+type Student struct {
+	ID        string     `json:"id" validate:"required,min=1,max=36"`
+	Name      string     `json:"name" validate:"required,min=1,max=50"`
+	Age       uint8      `json:"age" validate:"required,min=1,max=80"`
+	Grade     uint8      `json:"grade" validate:"required,min=1,max=11"`
+	Guardians []Guardian `json:"guardians" validate:"required,min=1,dive"`
+	Hobbies   []string   `json:"hobbies" validate:"omitempty,dive,min=2,max=50"`
+}
+
+type Guardian struct {
+	ID           string `json:"id" validate:"required,min=1,max=36"`
+	Name         string `json:"name" validate:"required,min=1,max=50"`
+	Relationship string `json:"relationship" validate:"required,oneof='parent' 'grandparent' 'brother' 'sister'"`
+	Phone        string `json:"phone" validate:"required"`
+}
+```
+
+Como hay validaciones que se explican por sí solas, puede que haya algunas que no tanto, por ejemplo:
+
+- `omitempty` dentro de la tag `validate` hace que si el cambo viene vacío (o nulo) omita la validación. **_⚠️ No confundir con el omitempty dentro del tag json._**
+- `oneof` válida que el campo sea alguna de las opciones listadas, en este caso quiero que en el campo parentesco solamente se pueda elegir entre padres, abuelos o hermanos.
+- `dive` permite que se valide cada uno de los elementos de una lista (arrays/slices)
+
+Lo siguiente que tenemos que hacer para poder validar la data es inicializar un objeto `validator` y llamar a la función `validator.Struct()` que recibe un objeto con información para validar, en mi caso ya hice el decoding de un json a una variable student.
+
+```go
+validate := validator.New()
+err = validate.Struct(student)
+if err != nil {
+  log.Println(err.Error())
+}
+```
+
+> ℹ️ El json que estoy usando de prueba lo puedes encontrar en el repositorio preparado para este arculo, alli mismo encontraras todo el código usado: [sebasvil20/validator-go-example](https://github.com/sebasvil20/validator-go-example 'sebasvil20/validator-go-example repositorio')
+
+En el primer caso de prueba esto haciendo que el validador falle, colocando campos fuera de rango, sin coincidencias en el _oneof_, etc. Cuando corres el _main.go_, nos loggea el error de la siguiente manera:
+
+```
+Key: 'Student.ID' Error:Field validation for 'ID' failed on the 'required' tag
+Key: 'Student.Name' Error:Field validation for 'Name' failed on the 'max' tag
+Key: 'Student.Age' Error:Field validation for 'Age' failed on the 'max' tag
+Key: 'Student.Guardians[0].Relationship' Error:Field validation for 'Relationship' failed on the 'oneof' tag
+Key: 'Student.Guardians[1].Relationship' Error:Field validation for 'Relationship' failed on the 'oneof' tag
+
+```
+
+Como puedes ver es un array de errores, cada uno detallado de qué campo está fallando y en que tag de validación está fallando.
+
+Si le pasamos un json con información correcta, el validador no devuelve ningún error y la aplicación sigue corriendo de manera habitual.
+
+### Validaciones custom
+
+En nuestro ejemplo anterior tenemos un problema: nuestro `guardian.phone` es un _string_ porque quiero hacer que los números los ingresen con cierto formato, pero no tengo ninguna validación que me permita poner regex ni formatos específicos, ¿qué debería hacer? Aquí es donde entran las validaciones custom.
+
+Una validación custom es una tag de validación a la que le asignas una función que devuelve un bool (Si es o no válido el campo), en estas funciones puedes hacer muchas cosas, validar si un string es igual a otro, hacer regex complejas, ciclos, etc.
+
+En mi caso necesito que mi validación verifique si el número de teléfono está en este formato "000-000-0000", asi que creamos la función que devuelva un booleano y adentro haga el match con la regex que le paso:
+
+```go
+func validatePhoneNumber(fl validator.FieldLevel) bool {
+	phoneNumberPattern := `^\d{3}-\d{3}-\d{4}$`
+	regx := regexp.MustCompile(phoneNumberPattern)
+	return regx.MatchString(fl.Field().String())
+}
+```
+
+Esta es la firma que debes seguir, la función debe recibir un `validator.FieldLevel` que básicamente es el campo y debe devolver un booleano, que indica si pasa o no la validación.
+
+Ahora, para registrarla en nuestro validador, simplemente al momento de inicializarlo llamamos la función `validator.RegisterValidation`
+
+```go
+validate.RegisterValidation("is-phone", validatePhoneNumber)
+
+```
+
+El primer argumento es el nombre que le quieres dar a la tag y el segundo es la función que debe llamar en esos casos. Ahora en nuestro modelo podemos colocar esa nueva tag:
+
+```go
+	Phone        string `json:"phone" validate:"required,is-phone"`
+```
+
+En caso de que esta validación llegara a fallar, el error se vería de esta forma:
+
+```go
+Key: 'Student.Guardians[0].Phone' Error:Field validation for 'Phone' failed on the 'is-phone' tag
+```
+
+Y ahora tendríamos el campo validado por una función custom totalmente funcional 🎉.
+
+## Consideraciones finales
+
+- En este artículo solamente tocamos algunas de las tags posibles (y las custom tags) de validación, pero la librería es muy potente y permite cosas como:
+  - Validar si un campo está presente, pero solo si otro campo lo está (tag: `requiredIf`)
+  - Validar si un campo contiene cierta cadena de caracteres (tag: `fieldcontains`)
+  - Validar si es un JWT (tag: `jwt`)
+- Se recomienda inicializar el validador con sus custom tags una única vez, y reutilizar esa instancia en todo el flujo de vida de la aplicación. Esto lo puedes lograr de muchas maneras, dependiendo de cuál se ajuste a tus preferencias puedes:
+  - Inicializar la instancia del validator al principio de tu app e inyectarla al contexto para pasárselo a cada request.
+  - Con inyección de dependencias pasarle la instancia inicializada a cada servicio que lo necesite.
+  - Crear una variable global e inicializarla con `init()` **_⚠️ Para nada recomendado, pero si quieres salir del paso es una opción rápida._**
+- La librería te permite validar también variables, no siempre deben ser structs. Puedes usar la función `validator.Var()` que recibe la variable y de segundo parámetro la lista de validaciones.
+- Toda la documentación de esta librería y más ejemplos los puedes encontrar en la [documentación de la librería](https://github.com/go-playground/validator 'Validator/v10 Github').
+- Todo el código utilizado en este artículo lo puedes encontrar en el repositorio de ejemplo de este blog: [sebasvil20/validator-go-example](https://github.com/sebasvil20/validator-go-example 'sebasvil20/validator-go-example repositorio')
