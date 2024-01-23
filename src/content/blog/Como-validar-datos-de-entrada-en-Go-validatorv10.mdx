@@ -16,7 +16,7 @@ tags:
 title: 'Como validar datos de entrada en Go: validator/v10'
 ---
 
-La validación de datos de entrada siempre ha sido una tarea crítica para garantizar la integridad y seguridad de tus aplicaciones. En este artículo vamos a explorar Go validator v10, una librería que nos permite validar datos de entrada que tiene mucho potencial, cubriremos sus funciones principales y como adoptar validaciones custom en nuestros modelos.
+La validación de datos de entrada siempre ha sido una tarea crítica para garantizar la integridad y seguridad de tus aplicaciones. En este artículo vamos a ver en detalle [validator/v10](https://github.com/go-playground/validator 'Validator v/10'), una librería que nos permite validar datos de entrada que tiene mucho potencial, cubriremos sus funciones principales y como adoptar validaciones custom en nuestros modelos.
 
 > ⚠️ Este artículo te va a ser útil sin importar que método de entrada utilices en tu aplicación, ya sea a través de jsons, yamls, entrada de texto por consola o el formato que uses, la librería validator/v10 actua sobre structs y variables de go, no sobre la entrada en si, por lo que el primer paso que tienes que hacer sin importar tu caso, es transformar esa entrada a un objeto/variable de Go.
 
@@ -85,6 +85,10 @@ type Guardian struct {
 Como hay validaciones que se explican por sí solas, puede que haya algunas que no tanto, por ejemplo:
 
 - `omitempty` dentro de la tag `validate` hace que si el cambo viene vacío (o nulo) omita la validación. **_⚠️ No confundir con el omitempty dentro del tag json._**
+- `min` y `max` tienen diferentes comportamientos dependiendo del tipo de dato al que se lo apliques:
+  - Para números: válida que el valor sea mayor o igual al puesto
+  - Para strings: válida que la longitud sea mínimo el valor pasado
+  - Para slices, arrays y mapas: válida la cantidad de items en ellos.
 - `oneof` válida que el campo sea alguna de las opciones listadas, en este caso quiero que en el campo parentesco solamente se pueda elegir entre padres, abuelos o hermanos.
 - `dive` permite que se valide cada uno de los elementos de una lista (arrays/slices). Es importante mencionar que en caso de ser un array de structs, el `dive` validará con las tags puestas dentro de ese struct, y si es un tipo primitivo de Go, después del `dive` deben ir las validaciones adicionales, es decir:
   - En el campo `Guardians` el `dive` hace que valide cada elemento del _array_ con las validaciones puestas en el struct `Guardian`.
@@ -155,6 +159,48 @@ Key: 'Student.Guardians[0].Phone' Error:Field validation for 'Phone' failed on t
 ```
 
 Y ahora tendríamos el campo validado por una función custom totalmente funcional 🎉.
+
+### Validaciones especiales: Maps
+
+Con los campos tipo _maps_ podemos hacer validaciones tanto en las **keys** como en los **values** del map, ¿cómo?
+
+Para validar las keys del mapa debemos envolver las validaciones necesarias de los delimitadores: `keys` y `endkeys`, mirémoslo en un ejemplo y expliquemos por partes:
+
+```go
+ExampleOfMap map[string]uint64 `json:"example_of_map" validate:"required,min=1,dive,keys,min=5,startswith=k,max=20,endkeys,min=2,max=4500"`
+```
+
+- Volvemos el campo requerido con la tag `required`.
+- Validamos que el mapa al menos tenga un elemento con el primer `min=1`.
+- Iniciamos el delimitador `keys` para validar las llaves del mapa, este debe siempre ir después del `dive`:
+  - Validamos que la llave tenga al menos 5 caracteres con `min=5`.
+  - Validamos que la llave inicie con el carácter '_k_' con la tag `startswith=k`.
+  - Validamos el tamaño máximo de la key con `max=20`.
+  - Ponemos el delimitador final para indicar que ya no hay más validaciones sobre las `keys` con `endkeys`.
+- Después de las validaciones de keys pondremos las validaciones de los valores, en este caso que sea un número mínimo 2 y máximo 4500 con `min=2,max=4500`.
+
+### Validaciones especiales: Comparaciones entre campos de structs
+
+La librería además nos permite hacer validaciones comparando structs, es decir, si en algún momento queremos que un campo sea mayor que otro, o que si o si sean iguales dos campos.
+
+Miremos el siguiente ejemplo:
+
+```go
+type Event struct {
+	StartDate  time.Time `json:"start_date" validate:"required"`
+	EndDate    time.Time `json:"end_date" validate:"required,gtfield=StartDate"`
+	EventTopic string    `json:"event_topic" validate:"required,necsfield=Sponsor.FavoriteLanguage"`
+	Sponsor    Sponsor   `json:"sponsor" validate:"required"`
+}
+
+type Sponsor struct {
+	Name             string `json:"name"`
+	FavoriteLanguage string `json:"favorite_language"`
+}
+```
+
+- Como primera parte vemos dos campos `StartDate` y `EndDate`, una validación que querrás hacer comúnmente es validar que la fecha de fin sea mayor a la fecha de inicio, esto lo podemos lograr con la tag `gtfield` (Forma corta de _greater than field_), simplemente le pasas a qué campo debe ser mayor. ¡Esta tag funciona también con números!
+- ¡Tenemos un sponsor en nuestro evento! Pero no nos cae bien, así que decidimos validar que el tema de nuestro evento sea algo completamente diferente a lo que al sponsor le gusta 😛. Para lograr esto debemos ingresar al struct anidado, a cualquier tag de comparación de campos, le agregamos "cs" para que pueda buscar en structs anidados, por ejemplo, tag `nefield` (forma corta de _not equal field_) quedaría `necsfield` y le pasamos el campo a comparar, en este caso, dentro del struct `Sponsor` el campo `FavoriteLanguage`.
 
 ## Consideraciones finales
 
