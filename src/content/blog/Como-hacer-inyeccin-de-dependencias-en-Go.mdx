@@ -20,7 +20,7 @@ title: Como hacer inyección de dependencias en Go
 
 ## ¿Por qué hacer inyección de dependencias en Go?
 
-La inyección de dependencias en Go ofrece una metodología eficaz para mejorar la modularidad y mantenibilidad del código. Al evitar el uso de variables globales, promueve un diseño más limpio y cohesivo, facilitando la comprensión y modificación del código. Además, proporciona una mayor testabilidad al permitir la sustitución sencilla de dependencias durante las pruebas unitarias, favoreciendo el desarrollo de software robusto y libre de acoplamientos innecesarios. La inyección de dependencias también fomenta la reutilización de componentes, al facilitar la conexión de módulos sin depender de implementaciones concretas.
+La inyección de dependencias en Go ofrece una metodología eficaz para mejorar la modularidad y mantenibilidad del código. Al evitar el uso de variables globales, promueve un diseño más limpio y cohesivo, facilitando la comprensión y modificación del código. Además, proporciona una mayor "testabilidad" (Palabra inventada que significa facilidad de testear) al permitir la sustitución sencilla de dependencias durante las pruebas unitarias, favoreciendo el desarrollo de software robusto y libre de acoplamientos innecesarios. La inyección de dependencias también fomenta la reutilización de componentes, al facilitar la conexión de módulos sin depender de implementaciones concretas.
 
 ## Inyección de dependencias sin librerías en Go:
 
@@ -238,4 +238,7 @@ Con esto deberías tener un servidor corriendo en el 8080 recibiendo peticiones 
 
 El ejemplo completo por si quieres probar directamente lo encuentras en el repo: [sebasvil20/blog-di](https://github.com/sebasvil20/blog-di 'sebasvil20/blog-di').
 
-Hey! 😁 ¡Has llegado al final! Si te ha gustado el artículo o te ha sido útil, no dudes en compartirlo, puedes decirme tus opiniones a través de mi cuenta de [X / Twitter.](https://twitter.com/JuanseTech 'X / Twitter')
+## Consideraciones finales
+
+- Revisa el tamaño de tu app y que tanto piensas que va a escalar para tomar la decisión de que usar.
+- [Google/Wire](https://github.com/google/wire 'Google Wire') es otra alternativa para lograr inyección de dependencias en Go, se diferencia de uber/fx con que google/wire hace la inyección en tiempo de compilado. ¡Te recomiendo que le des una mirada también!
