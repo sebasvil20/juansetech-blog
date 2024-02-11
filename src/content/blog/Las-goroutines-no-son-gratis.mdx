@@ -1,0 +1,134 @@
+---
+heroImage: /src/assets/images/gopher-friends.png
+category: Desarrollo de software
+description: >-
+  Las goroutines no siempre podrían ser tu mejor opción: en algunas ocasiones
+  serán tus enemigos. Si te preguntas por qué tu código concurrente es más lento
+  que el código sin concurrencia, este es el artículo que lo explica.
+pubDate: 2024-02-12T05:00:00.000Z
+draft: false
+tags:
+  - Concurrency
+  - Goroutines
+  - Golang
+  - Go
+title: Las goroutines no son gratis
+---
+
+Las goroutines no siempre podrían ser tu mejor opción: en algunas ocasiones serán tus enemigos. Si te preguntas por qué tu código concurrente es más lento que el código sin concurrencia, este es el artículo que lo explica.
+
+Siempre que vemos código que se bloquea en algún momento, pensamos en hacerlo concurrente para mejorar los tiempos de respuesta y ejecución, pero a menudo se nos olvida que las goroutines no son gratis.
+
+Agregar concurrencia a nuestra aplicación en Go involucra tiempo extra al iniciar goroutines, manejar channels y hacer el cleanup, por lo que debemos siempre hacer benchmarking antes de elegir si debemos o no hacer el código concurrente.
+
+## Benchmarking de código sin goroutines
+
+Vamos a mirar un ejemplo, una función que: Le pasas un número y hace las sumas de todos los números hasta ese número y además hace multiplicaciones de ese número hacia abajo, veamos la función:
+
+```go
+func SumUpToAndMultiplyDownTo(n int) (totalUp, totalDown int) {
+	for i := 1; i <= n; i++ {
+		totalUp += i
+	}
+
+	for i := n; i > 0; i-- {
+		totalDown *= i
+	}
+
+	return
+}
+```
+
+En este código vemos lo que mencionaba al principio: El primer for bloquea la ejecución del segundo hasta que termine, y el segundo bloquea el return hasta que termine sus iteraciones.
+
+Nuestro primer pensamiento para mejorar esto, es meter goroutines, una por cada for y así que se ejecuten concurrentemente, antes de eso, veamos benchmarks de la función sin goroutines con varios inputs:
+
+```
+Benchmark_SumUpToAndMultiplyDownToN/size_10-8         	135480042	      8.625 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_100-8        	15683214	      73.73 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_1000-8       	 2006463	      597.6 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_10000-8      	  208394	      5754 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_100000-8     	   20874	      57880 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_1000000000-8 	     2	          582751048 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_100000000000-8      1	          58273409486 ns/op
+```
+
+Como vemos, cuando a la función le pasas diez como input, la función demora 8.625 ns, y, cuando a la función le pasas cien mil millones como input, la función demora en ejecutarse 58273409486 ns, lo que a segundos son 58.27 s.
+
+## Benchmarking de código con goroutines
+
+Ahora hagamos el código concurrente, nuestra intuición nos llevará a que pensar que nuestro código demorará la mitad, al hacer que los dos fors se ejecuten concurrentemente, pero no es del todo así. Veamos como queda la función.
+
+```go
+func SumUpToAndMultiplyDownTo(n int) (totalUp, totalDown int) {
+	var wg sync.WaitGroup
+
+	upChan := make(chan int)
+	downChan := make(chan int)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 1; i <= n; i++ {
+			totalUp += i
+		}
+		upChan <- totalUp
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		result := 1
+		for i := n; i > 0; i-- {
+			result *= i
+		}
+		downChan <- result
+	}()
+
+	go func() {
+		wg.Wait()
+		close(upChan)
+		close(downChan)
+	}()
+
+	totalUp = <-upChan
+	totalDown = <-downChan
+
+	return
+}
+```
+
+Ahora, el benchmark nos tira resultados que van en contra de nuestra intuición:
+
+```go
+Benchmark_SumUpToAndMultiplyDownToN/size_10-8         	  435163	      2465 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_100-8        	  429084	      2853 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_1000-8       	  217639	      5360 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_10000-8      	   47982	      24862 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_100000-8     	    5576	      214011 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_1000000000-8 	      1	          2155616959 ns/op
+Benchmark_SumUpToAndMultiplyDownToN/size_100000000000-8       1	          213229888154 ns/op
+```
+
+## Resultados
+
+La función con goroutines con diez como input, demora 2465 ns, eso son 285 veces más que el código sin goroutines (que el resultado fueron 8.625 ns) 🤯. Y cuando le pasas cien mil millones como input, el código con goroutines se demora 213229888154 ns (\~3.5 minutos) eso es 3.6 veces (aproximadamente) más que el código sin goroutines.
+
+## Disclaimer
+
+El benchmark fue hecho con las siguientes características:
+
+```
+goos: darwin
+goarch: amd64
+cpu: Intel(R) Core(TM) i7 - 1068NG7 CPU @2.30GHz
+```
+
+Aunque este ejemplo podría ser algo dummy, puedes hacer la prueba del benchmark con otros ejemplos más complejos.
+
+## Conclusiones
+
+- Las goroutines no son gratis, para inicializarlas, sincronizarlas y manejarlas, la app gasta recursos que, en ciertos casos, podrían ser incluso mayores que los de una función sin goroutines.
+- Entre más tiempo demoren las tareas bloqueantes, podría ser mejor opción utilizar goroutines.
+- En casos donde las tareas bloqueantes tarden relativamente poco, es mejor que se ejecute el código linealmente en vez de concurrentemente.
+- Siempre realiza benchmarks sobre tu código con ambas opciones, para comprobar con resultados numéricos cuál es la mejor opción para tu caso. No te dejes llevar por tu intuición.
