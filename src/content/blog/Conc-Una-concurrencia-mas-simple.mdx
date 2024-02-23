@@ -1,0 +1,120 @@
+---
+heroImage: /src/assets/images/conc_article.png
+category: Desarrollo de software
+description: >-
+  "Conc" es un pkg de Go en desarrollo que me tiene bastante emocionado, es un
+  paquete que tiene como objetivo hacer la concurrencia incluso mas simple de lo
+  que ya es en Go.
+pubDate: 2024-02-23T05:00:00.000Z
+tags:
+  - Experimentos
+  - Concurrencia
+  - Golang
+  - Go
+title: 'Conc: Una concurrencia mas simple'
+---
+
+"[Conc](https://github.com/sourcegraph/conc)" es un pkg de Go en desarrollo que me tiene bastante emocionado, es un paquete que tiene como objetivo hacer la concurrencia incluso más simple de lo que ya es en Go.
+
+En Go ya de por sí es bastante fácil implementar concurrencia, sobre todo comparándolo con otros lenguajes, así que es sorprendente cuando salen en el mar de paquetes de Go, un paquete que tiene como objetivo hacer una concurrencia más simple, segura y fácil de mantener.
+
+Está pensado, construido y mantenido por los genios de Sourcegraph, la versión estable está en desarrollo, así que verificaría múltiples veces antes de utilizarla en un proyecto en producción.
+
+## Reducción de boilerplate
+
+Si has escrito concurrencia en Go, sabrás que hay cierto boilerplate que tienes que seguir, y en ciertas ocasiones puede ser engorroso y feo de mantener (It's not big deal, but who cares 🙇🏻‍♂️), con Conc puedes hacer cosas simples como lo siguiente:
+
+Imagina que tienes una función que necesites hacer concurrente muchas veces, en mi caso una función de test que tiene la probabilidad de tirar un panic o simplemente esperar cierto tiempo
+
+```go
+func thisIsSomethingYouShouldDoConcurrently() {
+	chanceToPanic := rand.Intn(1000)
+	if chanceToPanic > 603 && chanceToPanic < 760 {
+		panic("I panicked!")
+	}
+
+	rSeconds := rand.Intn(14) + 2
+	duration := time.Duration(rSeconds) * time.Second
+	fmt.Print("I haven't panicked, so im sleeping for ", rSeconds, " seconds\n")
+	time.Sleep(duration)
+}
+
+```
+
+Con el pkg de sync, haríamos lo siguiente para correr esta función al menos 100 veces:
+
+```go
+var wg sync.WaitGroup
+for i := 0; i < 100; i++ {
+  wg.Add(1)
+  go func() {
+    defer wg.Done()
+    thisIsSomethingYouShouldDoConcurrently()
+  }()
+}
+wg.Wait()
+```
+
+Nueve líneas de código para hacerlo, ahora veamos como podemos hacer lo mismo con Conc
+
+```go
+var wg conc.WaitGroup
+for i := 0; i < 100; i++ {
+  wg.Go(thisIsSomethingYouShouldDoConcurrently)
+}
+wg.Wait()
+```
+
+Es mucho más conciso, entendible y a primera vista no sorprende ni cansa tanto.
+
+### Manejo de panics
+
+La reducción de boilerplate no es lo único que te provee el waitGroup de Conc, también maneja los panics que se producen dentro de las goroutines y espera primero a que todas terminen para poder propagar el panic, esto es especialmente útil en situaciones donde no quieres perder la ejecución del resto de goroutines por un panic en alguna de ellas. Además, agrega un stacktrace completo de principio a fin de donde se ejecuta el panic.
+
+En el repo nos ponen un ejemplo de como lograr esto mismo sin el paquete Conc:
+
+```go
+type caughtPanicError struct {
+    val   any
+    stack []byte
+}
+
+func (e *caughtPanicError) Error() string {
+    return fmt.Sprintf(
+        "panic: %q\n%s",
+        e.val,
+        string(e.stack)
+    )
+}
+
+func main() {
+    done := make(chan error)
+    go func() {
+        defer func() {
+            if v := recover(); v != nil {
+                done <- &caughtPanicError{
+                    val: v,
+                    stack: debug.Stack()
+                }
+            } else {
+                done <- nil
+            }
+        }()
+        doSomethingThatMightPanic()
+    }()
+    err := <-done
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
+Un montón, ¿No?
+
+## Consideraciones
+
+- Sí, obvio es un wrapper de [sync](https://pkg.go.dev/sync), pero es una buena abstracción. Todo lo mismo que te da el paquete lo puedes lograr con código nativo de Go sin ninguna dependencia, pero el mundo del desarrollo de software está hecho a punta de tradeoffs entre simplicidad, tiempo de desarrollo y devexp.
+- El manejo de los pools por Conc es maravilloso, te invito a que le des una mirada a todos los ejemplos en su repositorio: [https://github.com/sourcegraph/conc](https://github.com/sourcegraph/conc)
+- No lo recomendaría como reemplazo directo de la concurrencia nativa de Go, Conc viene a resolver problemas que usualmente con pocas goroutines no encontraras.
+- Es un paquete en desarrollo, puede cambiar mucho en el futuro, como mencioné al principio del artículo, es un pkg del que estoy muy pendiente (y emocionado).
+- Si eres principiante en Go, te recomiendo directamente olvidarte de la existencia de este pkg, además de que viene a resolver problemas poco comunes, siempre es bueno tener las bases de lo que haces bien claras, o traerás más problemas de los que solucionas.
