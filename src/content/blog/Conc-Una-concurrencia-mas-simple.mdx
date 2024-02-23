@@ -14,9 +14,9 @@ tags:
 title: 'Conc: Una concurrencia mas simple'
 ---
 
-"[Conc](https://github.com/sourcegraph/conc)" es un pkg de Go en desarrollo que me tiene bastante emocionado, es un paquete que tiene como objetivo hacer la concurrencia incluso más simple de lo que ya es en Go.
+"[Conc](https://github.com/sourcegraph/conc)" es un pkg de Go en desarrollo que me tiene bastante emocionado, es una librería que tiene como objetivo hacer la concurrencia incluso más simple de lo que ya es en Go.
 
-En Go ya de por sí es bastante fácil implementar concurrencia, sobre todo comparándolo con otros lenguajes, así que es sorprendente cuando salen en el mar de paquetes de Go, un paquete que tiene como objetivo hacer una concurrencia más simple, segura y fácil de mantener.
+En Go ya de por sí es bastante fácil implementar concurrencia, sobre todo comparándolo con otros lenguajes, así que es sorprendente cuando salen en el mar de paquetes de Go, un paquete que quiere hacer una concurrencia más simple, segura y fácil de mantener.
 
 Está pensado, construido y mantenido por los genios de Sourcegraph, la versión estable está en desarrollo, así que verificaría múltiples veces antes de utilizarla en un proyecto en producción.
 
@@ -55,7 +55,7 @@ for i := 0; i < 100; i++ {
 wg.Wait()
 ```
 
-Nueve líneas de código para hacerlo, ahora veamos como podemos hacer lo mismo con Conc
+Nueve líneas de código para hacerlo, pero podemos hacerlo mejor con _Conc:_
 
 ```go
 var wg conc.WaitGroup
@@ -69,7 +69,7 @@ Es mucho más conciso, entendible y a primera vista no sorprende ni cansa tanto.
 
 ### Manejo de panics
 
-La reducción de boilerplate no es lo único que te provee el waitGroup de Conc, también maneja los panics que se producen dentro de las goroutines y espera primero a que todas terminen para poder propagar el panic, esto es especialmente útil en situaciones donde no quieres perder la ejecución del resto de goroutines por un panic en alguna de ellas. Además, agrega un stacktrace completo de principio a fin de donde se ejecuta el panic.
+La reducción de boilerplate no es lo único que te provee el `waitGroup` de Conc, también maneja los panics que se producen dentro de las goroutines y espera primero a que todas terminen para poder propagar el panic, esto es especialmente útil en situaciones donde no quieres perder la ejecución del resto de goroutines por un panic en alguna de ellas. Además, agrega un stacktrace completo de principio a fin de donde se ejecuta el panic.
 
 En el repo nos ponen un ejemplo de como lograr esto mismo sin el paquete Conc:
 
