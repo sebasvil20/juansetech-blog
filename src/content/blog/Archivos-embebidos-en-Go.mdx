@@ -1,0 +1,128 @@
+---
+heroImage: /src/assets/images/gopher-gamer.png
+category: Desarrollo de software
+description: >-
+  Cuando necesitas abrir y leer algún archivo dentro de tu programa de Go,
+  podrías encontrarte con problemas que solucionarás con los archivos embebidos.
+  En este artículo resumimos como implementarlo y cuáles son sus ventajas.
+pubDate: 2024-03-01T05:00:00.000Z
+tags:
+  - Golang
+  - Go
+title: Archivos embebidos en Go
+---
+
+Sé que, como yo, has pasado por este problema: Necesitas acceder al contenido de X archivo en tu programa de Go.
+
+Lo primero que se nos viene a la mente es abrirlo de la manera clásica, con `os.ReadFile`, y no hay nada malo en esto, es perfectamente funcional, pero hoy te vengo a mostrar otra alternativa con varias ventajas: Archivos embebidos.
+
+En ocasiones se nos dificulta la manera "clásica" por el cambio de rutas de los archivos entre scopes de nuestra aplicación, ya sea en local, en la nube, en tu hosting, etc. El problema lo vas a encontrar cuando despliegas únicamente el ejecutable que genera Go con el `go build`, este ejecutable no incluye nada más que el código, si llamas a algún archivo estático desde ese ejecutable y te llevas solo el ejecutable para otro lado, tu parte de código que accede a ese archivo estático va a fallar.
+
+Esto se soluciona con `go embed`, una utilidad que nos permite embeber archivos al ejecutable de Go y así olvidarnos del problema de rutas relativas/absolutas o archivos no encontrados.
+
+Imagina que en tu aplicación, necesitas acceder a un _json_ que se encuentra en un archivo estático, un _json_ por poner un ejemplo, pero puede ser casi cualquier tipo de archivo, miremos la comparación entre ambas formas de obtener el archivo dentro de nuestro programa:
+
+## os.ReadFile
+
+Con la forma clásica haríamos esto:
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+)
+
+type User struct {
+	ID   int
+	Name string
+}
+
+func main() {
+	file, err := os.Open("./user.json")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+
+	var user User
+	if err := json.Unmarshal(bytes, &user); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%+v\n", user)
+}
+
+```
+
+Y este código funciona de manera maravillosa, cuando haces, `go run main.go` abre y lee el archivo, además de hacer el unmarshal a un objeto de tipo User.
+
+Cuando buildeas la aplicación y envías solamente el ejecutable a otro lado va a fallar, porque no va a encontrar el archivo nunca, a no ser de que lo lleves contigo.
+
+```
+panic: open./ user.json: no such file or directory
+
+goroutine 1[running]:
+main.main()
+  / Users / jvillega / Documents / blog - embed / main.go: 18 + 0x185
+```
+
+## Go embed
+
+Como mencioné en la introducción, `go embed` te permite embeber archivos en el build de la aplicación, lo logras de la siguiente manera:
+
+```go
+//go:embed filePath
+var n []byte
+```
+
+Esta es la parte que embebe el archivo, `filePath` es la ruta del archivo relativa a donde lo llames y esta línea de `go:embed` siempre debe ir encima de una variable definida fuera de cualquier _scope_ (Fuera de funciones).
+
+Con nuestro ejemplo del _json_ anterior, nos quedaría el siguiente código:
+
+```go
+package main
+
+import (
+	_ "embed"
+	"encoding/json"
+	"fmt"
+)
+
+type User struct {
+	ID   int
+	Name string
+}
+
+//go:embed user.json
+var file []byte
+
+func main() {
+	bytes := file
+
+	var user User
+	if err := json.Unmarshal(bytes, &user); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%+v\n", user)
+}
+```
+
+Ahora, nuestro archivo está embebido, cuando hacemos `go build`, y nos llevamos solo el ejecutable, el programa siempre funciona
+
+```
+output: {ID:1 Name:Gopher}
+```
+
+Y nunca nos tira un error, porque el archivo lo tiene embebido, no lo debe buscar en ningún otro lado.
+
+Sin duda una utilidad que nos ahorra muchos dolores de cabeza 😉
