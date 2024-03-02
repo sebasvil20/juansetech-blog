@@ -106,10 +106,8 @@ type User struct {
 var file []byte
 
 func main() {
-	bytes := file
-
 	var user User
-	if err := json.Unmarshal(bytes, &user); err != nil {
+	if err := json.Unmarshal(file, &user); err != nil {
 		panic(err)
 	}
 
