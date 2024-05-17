@@ -1,0 +1,204 @@
+---
+heroImage: /src/assets/images/Frame 16 (1).png
+category: Desarrollo de software
+description: "¡Transforma tu web en minutos! Aprende a configurar Templ con Tailwind CSS en Go y descubre cómo combinar el poder de un lenguaje robusto con el estilo moderno y eficiente de uno de los mejores frameworks de CSS. Dale un toque profesional a tus proyectos y eleva tu desarrollo web al siguiente nivel. \U0001F680"
+pubDate: 2024-05-16T05:00:00.000Z
+draft: false
+tags:
+  - Frontend
+  - Talwind
+  - Templ
+  - Golang
+  - Go
+title: Configuración de Templ + Tailwind
+---
+
+Templ es un lenguaje y motor de templates para Go que permite escribir tus templates juntando HTML y Go en un mismo archivo, es bastante intuitivo y muy poderoso.
+
+En este artículo estaremos cubriendo la manera en la que podemos configurar Talwind CSS en Templ y hacer el trabajo lo más automático posible.
+
+## Requisitos previos
+
+- Go > 1.21
+- Debes tener instalado Templ, te dejo la [documentación de Templ](https://templ.guide/quick-start/installation 'Documentación de Templ') para más detalles, sin embargo, en resumen es correr este comando:
+
+```
+go install github.com/a-h/templ/cmd/templ@latest
+```
+
+- Debes tener instalado el CLI de Tailwind. Corriendo el siguiente comando:
+
+```
+npm install -D tailwindcss
+```
+
+## Setup inicial
+
+Con el proyecto de Go iniciado, vamos a inicializar un servidor que, por el momento, tenga la ruta `/ping` y responda `pong`
+
+```go
+package main
+
+import "net/http"
+
+func main() {
+	http.Handle("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("pong"))
+	}))
+
+	http.ListenAndServe(":3000", nil)
+}
+```
+
+El siguiente paso es instalar Templ y crear una página de inicio para nuestro ejemplo, en la raíz de nuestro proyecto corremos:
+
+```
+go get github.com/a-h/templ
+```
+
+El anterior comando te agregará una nueva entrada en el archivo `go.mod`, el responsable de manejar tus dependencias.
+
+Utilizando Templ, vamos a crear una página de inicio que solamente tenga como contenido "Hello World", por el momento sin estilos ni nada similar, creamos un nuevo paquete `views` (O el nombre de tu preferencia) con un archivo `index.templ`, dentro del archivo, solo estará un esqueleto básico de html y un texto diciendo Hello World, tal cual lo siguiente:
+
+```go
+package views
+
+templ Index() {
+    <!DOCTYPE html>
+    <html>
+    	<head>
+    		<meta charset="UTF-8" />
+    		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    	</head>
+    	<body>
+    		<main class="min-h-screen min-w-full">
+    		    Hello World
+    		</main>
+    	</body>
+    </html>
+}
+```
+
+Para generar el archivo de Go a partir de este templ, debemos correr el siguiente comando en la raíz de nuestro proyecto
+
+```go
+templ generate
+```
+
+Esto nos generará un archivo llamado `index_templ.go`, el cual contiene la función `Index` que devuelve un `templ.Component`, el necesario para renderizar nuestro contenido. Ahora solo queda crear la ruta en la que se va a servir esta template, de la siguiente manera en el main.go
+
+```go
+http.Handle("/", templ.Handler(views.Index()))
+```
+
+Ahora, cuando corras el programa con `go run main.go` podrás irte a tu navegador, ir a `localhost:3000` y ver un mensaje diciendo "Hello World"
+
+## Agregando Tailwind CSS
+
+Con una vista básica creada, vamos a agregar Tailwind CSS y jugar un poco con estilos, lo primero que debemos hacer es crear una carpeta que contenga nuestros archivos estáticos, es allí donde meteremos nuestros estilos. Esta carpeta la debemos servir en nuestro router para que podamos acceder a sus archivos desde la aplicación, debemos agregar la siguiente línea en nuestro `main.go`
+
+```go
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+```
+
+Disclaimer: La carpeta y la ruta pueden tener el nombre que desees: `static`, `public`, `content`, `files`, cualquier nombre que consideres pertinente.
+
+En la raíz del proyecto, corremos el siguiente comando para inicializar Tailwind, esto nos creará un archivo `tailwind.config.js`
+
+```go
+npx tailwindcss init
+```
+
+Dentro de este archivo generado, debemos agregar las rutas de donde van a estar nuestras vistas o plantillas html, en nuestro caso todas las vamos a meter a un paquete llamado `views`, así que el archivo `talwind.config.js` nos debería quedar tal que:
+
+```go
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+	content: ["./views/**/*.{templ,go}"],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+La propiedad `content` es donde va a ir Tailwind a buscar que clases se utilizan para hacer el compilado solamente de lo que utilizamos, si tus vistas las estás metiendo dentro de otra carpeta sigue el patrón necesario para que las encuentre en donde las colocaste tú.
+
+Ahora tenemos que crear un archivo `tailwind_input.css` en la carpeta `static` que creamos anteriormente, este archivo debe tener el siguiente contenido:
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+El siguiente paso es hacer el build con Tailwind CLI, corriendo el siguiente comando:
+
+```
+npx tailwindcss -i ./static/tailwind_input.css -o ./static/tailwind_output.css
+```
+
+Esto te generará un archivo `tailwind_output.css` con las clases optimizadas que estés usando de Tailwind. Este comando debes correrlo siempre al buildear tu aplicación.
+
+Por último, y para poder hacer uso de sus clases, debemos importar el archivo `tailwind_output.css` dentro del \<head> de nuestra template, de la siguiente manera:
+
+```html
+<link href="/static/tailwind_output.css" rel="stylesheet" />
+```
+
+El archivo completo debe verse así:
+
+```go
+package views
+
+templ Index() {
+    <!DOCTYPE html>
+    <html>
+    	<head>
+    		<meta charset="UTF-8" />
+    		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    		<link href="/static/tailwind_output.css" rel="stylesheet" />
+    	</head>
+    	<body>
+    		<main class="min-h-screen min-w-full">
+                Hello, World!
+    		</main>
+    	</body>
+    </html>
+}
+```
+
+Nuevamente, debemos generar las templates de Templ y regenerar el archivo de Talwind, así que corremos los comandos:
+
+```
+templ generate
+npx tailwindcss -i ./static/tailwind_input.css -o ./static/tailwind_output.css
+```
+
+Corremos nuestra aplicación y veremos que nuestro `Hello, World!` tiene una fuente distinta, ¡Está cargando Tailwind CSS!
+
+## Automatizando comandos con Makefiles
+
+Para desarrollar en este stack tienes que estar constantemente buildeando tailwind y regenerando las templates de Templ, para facilitarte la vida, puedes crear un Makefile que junte todo y lo haga con un solo comando, te dejo un ejemplo de lo que utilizo yo:
+
+```
+go_run:
+	@echo "\nRunning API\n"
+	@go run main.go
+
+templ:
+	@echo "\nGenerating templates\n"
+	@templ generate
+
+tailwind:
+	@echo "\nCompiling Tailwind CSS\n"
+	@npx tailwindcss -i ./static/tailwind_input.css -o ./static/tailwind_output.css
+
+run: tailwind templ go_run
+```
+
+De esta manera, cuando quiero correr la aplicación, solo escribo en la consola make run y este genera las templates de Templ, compila Tailwind Css y además pone a correr el servidor
+
+### Repo de ejemplo
+
+Te dejo el repositorio con todo el código utilizado para que lo pruebes tú mismo: [https://github.com/sebasvil20/tailwind-templ-example](https://github.com/sebasvil20/tailwind-templ-example)
