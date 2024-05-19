@@ -5,6 +5,7 @@ import { siteConfig } from '@/site-config'
 export async function GET() {
 	const posts = await getCollection('blog')
 	return rss({
+		stylesheet: '/rss/pretty-feed-v3.xsl',
 		title: siteConfig.title,
 		description: siteConfig.description,
 		site: import.meta.env.SITE,
