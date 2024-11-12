@@ -6,6 +6,7 @@ interface SiteConfig {
 	ogLocale: string
 	shareMessage: string
 	paginationSize: number
+	keywords?: string
 }
 
 export const siteConfig: SiteConfig = {
@@ -16,5 +17,6 @@ export const siteConfig: SiteConfig = {
 	lang: 'es-ES',
 	ogLocale: 'es_ES',
 	shareMessage: 'Me ha encantado este artículo, queria compartirlo con ustedes 👀.',
-	paginationSize: 4 // Number of posts per page
+	paginationSize: 4,
+	keywords: 'blog, desarrollo, software, tecnología, go, golang, tech, vida personal'
 }
