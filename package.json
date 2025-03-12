@@ -9,12 +9,21 @@
 		"type": "git",
 		"url": "https://github.com/sebasvil20/juansetech-blog"
 	},
+	"engines": {
+		"node": "20.x"
+	},
 	"keywords": [
-		"astro",
-		"astrojs",
-		"astro-template",
-		"astro-blog",
-		"astro-b"
+		"golang-blog",
+		"sebasvil20",
+		"juansetech",
+		"juansetech-blog",
+		"Juanse Villegas",
+		"software",
+		"development",
+		"go",
+		"goroutines",
+		"channels",
+		"concurrency"
 	],
 	"bugs": {
 		"url": "https://github.com/sebasvil20/juansetech-blog/issues"
