@@ -1,0 +1,174 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+// Importa otros componentes que necesites
+
+const title = 'Sobre mí'
+const description =
+	'Desarrollador de software fullstack con experiencia en Golang, React y desarrollo web'
+---
+
+<BaseLayout title={title} description={description}>
+	<section class='container mx-auto px-4 py-8 md:py-16'>
+		<div class='prose prose-lg dark:prose-invert max-w-3xl mx-auto'>
+			<!-- Foto de perfil -->
+			<div class='flex justify-center mb-8'>
+				<img
+					src='/perfil-juansetech.png'
+					alt='Juan Sebastian Villegas'
+					class='rounded-full w-40 h-40 object-cover border-4 border-gray-200 dark:border-gray-800'
+				/>
+			</div>
+
+			<h2>¿Quién soy?</h2>
+			<p>
+				Soy Juan Sebastian Villegas, Juanse Villegas para los amigos o Sebasvil20 para SEO.
+				<br />Un Ingeniero de Software Senior Fullstack basado en Medellín, Colombia. Me especializo
+				en el desarrollo de aplicaciones web eficientes utilizando tecnologías como Golang, React,
+				MySQL y herramientas de monitoreo y despliegue.
+			</p>
+
+			<h2>Mi experiencia</h2>
+			<p>
+				Actualmente trabajo como Senior Software Engineer en Mercadolibre, donde desarrollo
+				aplicaciones de backoffice para optimizar los flujos de pago y costos en Mercadopago.
+				Durante mi trayectoria profesional, he:
+			</p>
+			<ul>
+				<li>
+					Desarrollado APIs REST para configurar múltiples productos con foco en reducir errores y
+					centralizar información
+				</li>
+				<li>
+					Liderado la gestión de calidad de código, cumplimiento de SLOs e identificación de
+					vulnerabilidades
+				</li>
+				<li>
+					Mantenido tiempos de respuesta bajos mediante estrategias como caché y optimización de
+					bases de datos
+				</li>
+				<li>Desarrollado y mantenido librerías internas para mejorar el proceso de desarrollo</li>
+				<li>Mentoreado a nuevos ingenieros de software</li>
+			</ul>
+
+			<p>Además de trabajar para grandes empresas, tengo mis propios proyectos, como:</p>
+			<ul>
+				<li>
+					<a href='https://juansetech.co' target='_blank' rel='noopener noreferrer'>Juanse Tech</a>,
+					donde comparto tutoriales y guías sobre desarrollo de software.
+				</li>
+				<li>
+					<a
+						href='https://chromewebstore.google.com/detail/lead-creator/lnlmpcjimppmaiiehgpjhipmpalhopei'
+						target='_blank'
+						rel='noopener noreferrer'>Lead creator</a
+					>, Una extensión para prospección automática en instagram
+				</li>
+			</ul>
+
+			<h2>Formación</h2>
+			<p>
+				Me encuentro estudiando Ingeniería de Software en UNIR Colombia (2021-2026). También soy
+				Tecnólogo en Análisis y Desarrollo de Sistemas de Información por el SENA (2020-2022).
+			</p>
+
+			<h2>Habilidades</h2>
+			<div class='flex flex-wrap gap-2 my-4'>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>Golang</span>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>JavaScript</span>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>React</span>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>NextJS</span>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>MySQL</span>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>Docker</span>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>Git</span>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>Tailwind</span>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>AWS</span>
+				<span class='bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full text-sm'>CI/CD</span>
+			</div>
+
+			<p>
+				Además de mis habilidades técnicas, me considero un buen solucionador de problemas con
+				fuertes capacidades de comunicación, liderazgo, mentoría y trabajo en equipo.
+			</p>
+
+			<h2>Idiomas</h2>
+			<p>Español (Nativo) e Inglés (C2)</p>
+
+			<h2>Contacto</h2>
+			<div class='flex space-x-4 my-4'>
+				<a
+					href='mailto:hello@juansetech.co'
+					class='text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary-dark'
+				>
+					<svg
+						xmlns='http://www.w3.org/2000/svg'
+						width='24'
+						height='24'
+						viewBox='0 0 24 24'
+						fill='none'
+						stroke='currentColor'
+						stroke-width='2'
+						stroke-linecap='round'
+						stroke-linejoin='round'
+						class='feather feather-mail'
+						><path d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'
+						></path><polyline points='22,6 12,13 2,6'></polyline></svg
+					>
+				</a>
+				<a
+					href='https://linkedin.com/in/sebasvil20/'
+					target='_blank'
+					rel='noopener noreferrer'
+					class='text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary-dark'
+				>
+					<svg
+						xmlns='http://www.w3.org/2000/svg'
+						width='24'
+						height='24'
+						viewBox='0 0 24 24'
+						fill='none'
+						stroke='currentColor'
+						stroke-width='2'
+						stroke-linecap='round'
+						stroke-linejoin='round'
+						class='feather feather-linkedin'
+						><path
+							d='M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z'
+						></path><rect x='2' y='9' width='4' height='12'></rect><circle cx='4' cy='4' r='2'
+						></circle></svg
+					>
+				</a>
+				<a
+					href='https://github.com/sebasvil20'
+					target='_blank'
+					rel='noopener noreferrer'
+					class='text-gray-700 hover:text-primary dark:text-gray-300 dark:hover:text-primary-dark'
+				>
+					<svg
+						xmlns='http://www.w3.org/2000/svg'
+						width='24'
+						height='24'
+						viewBox='0 0 24 24'
+						fill='none'
+						stroke='currentColor'
+						stroke-width='2'
+						stroke-linecap='round'
+						stroke-linejoin='round'
+						class='feather feather-github'
+						><path
+							d='M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22'
+						></path></svg
+					>
+				</a>
+			</div>
+			<p>Si quieres contactarme, puedes hacerlo a través de:</p>
+			<ul>
+				<li>Email: <a href='mailto:hello@juansetech.co'>hello@juansetech.co</a></li>
+				<li>
+					LinkedIn: <a href='https://linkedin.com/in/sebasvil20/'>linkedin.com/in/sebasvil20/</a>
+				</li>
+				<li>GitHub: <a href='https://github.com/sebasvil20'>github.com/sebasvil20</a></li>
+				<li>Teléfono: (+57) 3053190789</li>
+			</ul>
+		</div>
+	</section>
+</BaseLayout>
