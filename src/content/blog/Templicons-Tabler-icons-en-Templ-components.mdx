@@ -1,0 +1,62 @@
+---
+heroImage: /src/assets/images/templicons_icon.png
+category: Desarrollo de software
+description: >-
+  Templicons es una libreria de templ components con todos los iconos de Tabler
+  icons.
+pubDate: 2025-04-13T05:00:00.000Z
+tags:
+  - Pkg
+  - Golang
+  - Go
+title: 'Templicons: Tabler icons en Templ components'
+---
+
+# ¿Qué es Templicons?
+
+Templicons es la solución de iconos para tus vistas de Templ en Go. Una colección completa de iconos outlined y filled de Tabler icons hecha componentes de Templ. Tan fácil como instalar la librería, y usar el icono que necesites.
+
+## Instalación
+
+La instalación la haces a través de go get
+
+```powershell
+go get github.com/sebasvil20/templicons
+```
+
+## Uso
+
+Todos los iconos de Tabler Icons están disponibles: tanto su versión outlined como la filled.
+
+Puedes usarlo sin propiedades adicionales o customizarlos a tu gusto
+
+```go
+package yourview
+
+import (
+    "github.com/sebasvil20/templicons/i"
+    "github.com/sebasvil20/templicons/tabler"
+)
+
+templ YourView() {
+    // with default props
+    @icons.Menu2()
+
+    // with custom props
+    @icons.Menu2(i.Props{
+        Size: icons.XS,
+        Class: "text-red-500",
+        StrokeWidth: "2",
+        ID: "menu-icon",
+        AriaLabel: "menu-icon",
+    })
+}
+```
+
+## Creditos
+
+No estoy asociado de ninguna manera con [Tabler Icons](https://tabler.io/icons). Esto es solo una colección hecha componentes de Templ para Go.
+
+# Repositorio
+
+La librería es 100% código abierto, y puedes validar, contribuir y revisar el código en [github.com/sebasvil20/templicons](https://github.com/sebasvil20/templicons)
