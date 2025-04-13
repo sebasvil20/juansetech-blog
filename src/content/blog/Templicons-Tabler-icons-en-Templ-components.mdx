@@ -39,19 +39,32 @@ import (
 )
 
 templ YourView() {
-    // with default props
-    @icons.Menu2()
+// with default props
+    @tabler.Menu2()
 
     // with custom props
-    @icons.Menu2(i.Props{
-        Size: icons.XS,
+    @tabler.Menu2(i.Props{
+        Size: "128",
         Class: "text-red-500",
         StrokeWidth: "2",
         ID: "menu-icon",
         AriaLabel: "menu-icon",
     })
+
+    // You can also use the color constants or the size constans
+    @tabler.Menu2(i.Props{
+        Size: i.SizeXS,
+        Class: i.StrokeWarning,
+        StrokeWidth: i.StrokeBold,
+        ID: "menu-icon",
+        AriaLabel: "menu-icon",
+    })
 }
 ```
+
+Los iconos son completamente customizables, compatibles con clases para su control total. Puedes modificar las clases, el tamaño, sumarle un ID o agregar el aria label.
+
+Tienes la documentación completa de su uso en [github.com/sebasvil20/templicons](https://github.com/sebasvil20/templicons)
 
 ## Creditos
 
@@ -59,4 +72,4 @@ No estoy asociado de ninguna manera con [Tabler Icons](https://tabler.io/icons).
 
 # Repositorio
 
-La librería es 100% código abierto, y puedes validar, contribuir y revisar el código en [github.com/sebasvil20/templicons](https://github.com/sebasvil20/templicons)
+La librería es 100% código abierto, y puedes validar, contribuir y revisar el código en [github.com/sebasvil20/templicons.](https://github.com/sebasvil20/templicons) Si te gusta y lo encuentras útil, ¡no dudes en dejarme una ⭐ en el repo!
